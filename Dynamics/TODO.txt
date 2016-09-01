@@ -1,0 +1,8 @@
+﻿= Dynamics.NET =
+
+= v1.0 =
+
+ * add PIC from Sasa or some simpler variant if possible
+ * complete mutability with cycle detection
+ * complete deep copy with sharing
+ * add tests
