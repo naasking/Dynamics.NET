@@ -124,8 +124,8 @@ namespace Dynamics
         public static Kind Kind(this Type type)
         {
             return type.IsGenericParameter      ? Dynamics.Kind.Parameter:
-                   type.IsGenericType           ? Dynamics.Kind.Application:
                    type.IsGenericTypeDefinition ? Dynamics.Kind.Definition:
+                   type.IsGenericType           ? Dynamics.Kind.Application:
                                                   Dynamics.Kind.Type;
         }
 
@@ -153,15 +153,15 @@ namespace Dynamics
                 context = type.GetGenericParameterConstraints();
                 return Dynamics.Kind.Parameter;
             }
-            else if (type.IsGenericType)
-            {
-                context = type.GetGenericArguments();
-                return Dynamics.Kind.Application;
-            }
             else if (type.IsGenericTypeDefinition)
             {
                 context = type.GetGenericArguments();
                 return Dynamics.Kind.Definition;
+            }
+            else if (type.IsGenericType)
+            {
+                context = type.GetGenericArguments();
+                return Dynamics.Kind.Application;
             }
             else
             {
