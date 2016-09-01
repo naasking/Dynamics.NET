@@ -31,12 +31,12 @@ namespace Dynamics
         Definition,
 
         /// <summary>
-        /// Represents pointers to types.
+        /// Represents an unmanaged pointer.
         /// </summary>
         Pointer,
 
         /// <summary>
-        /// Represents managed references to types.
+        /// Represents a managed reference.
         /// </summary>
         Reference,
     }

@@ -123,11 +123,10 @@ namespace Dynamics
         /// <returns>The <see cref="Dynamics.Kind"/> classifying <paramref name="type"/>.</returns>
         public static Kind Kind(this Type type)
         {
-            return type.HasElementType          ? Dynamics.Kind.Application:
+            return type.IsArray                 ? Dynamics.Kind.Definition:
+                   type.IsPointer               ? Dynamics.Kind.Pointer:
+                   type.IsByRef                 ? Dynamics.Kind.Reference:
                    type.IsGenericParameter      ? Dynamics.Kind.Parameter:
-                   type.IsArray                 ? Dynamics.Kind.Definition:
-                   type.IsPointer               ? Dynamics.Kind.Definition:
-                   type.IsByRef                 ? Dynamics.Kind.Definition:
                    type.IsGenericTypeDefinition ? Dynamics.Kind.Definition:
                    type.IsGenericType           ? Dynamics.Kind.Application:
                                                   Dynamics.Kind.Type;
