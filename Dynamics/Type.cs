@@ -77,6 +77,7 @@ namespace Dynamics
             // Immutable: any types decorated with [Pure] || T has init-only fields whose types are immutable
             // Maybe: if any fields have types with Mutability.Maybe
             // Mutable: otherwise
+            // Need a list of sanitized immutable types from core library: Int32, DateTime, decimal, Exception, Attribute, Tuple<*>, etc.
             Mutability = 0 < type.GetCustomAttributes(typeof(PureAttribute), false).Length ? Mutability.Immutable:
                          typeof(Delegate).IsAssignableFrom(type) || HasImpureMethods(type) ? Mutability.Mutable:
                                                                                              TransitiveMutability(type, out isMutable);
@@ -214,8 +215,9 @@ namespace Dynamics
             // skip standard methods, ie. GetHashCode, Equals, ToString, CompareTo, get_* and private set_* tagged with [CompilerGenerated], etc.
             //FIXME: should also exclude operators?
             var ieq = type.GetInterface("IEquatable`1");
-            var icompg = type.GetInterface("IComparable`1");
+            var icompg = type.GetInterface(typeof(IComparable<>).MakeGenericType(type).Name);
             var icomp = type.GetInterface("IComparable");
+            var icln = type.GetInterface("ICloneable");
             var typeArgs = new[] { type };
             return type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy)
                        .All(x =>
@@ -224,6 +226,7 @@ namespace Dynamics
                            return x.Name.Equals("GetHashCode") && x.DeclaringType == typeof(object)
                                || x.Name.Equals("Equals") && (x.DeclaringType == typeof(object) || ieq != null && args.Length == 1 && args[0].ParameterType == type)
                                || x.Name.Equals("ToString")
+                               || x.Name.Equals("Clone") && icln != null && args.Length == 0
                                || x.Name.Equals("CompareTo") && args.Length == 1 && (icompg != null && args[0].ParameterType == type || icomp != null && args[0].ParameterType == typeof(object))
                                || x.Name.StartsWith("get_") && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length != 0
                                || x.Name.StartsWith("set_") && x.IsPrivate && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length != 0
