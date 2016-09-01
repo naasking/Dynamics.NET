@@ -216,15 +216,20 @@ namespace Dynamics
             var ieq = type.GetInterface("IEquatable`1");
             var icompg = type.GetInterface("IComparable`1");
             var icomp = type.GetInterface("IComparable");
+            var typeArgs = new[] { type };
             return type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy)
-                       .Any(x => !(x.Name.Equals("GetHashCode") && x.DeclaringType == typeof(object))
-                              && !(x.Name.Equals("Equals") && (x.DeclaringType == typeof(object) || ieq != null))
-                              && !(x.Name.Equals("ToString") && x.DeclaringType == typeof(object))
-                              && !(x.Name.Equals("CompareTo") && (icompg != null || icomp != null))
-                              && !(x.Name.StartsWith("get_") && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length == 0)
-                              && !(x.Name.StartsWith("set_") && x.IsPrivate && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length == 0)
-                              && x.GetCustomAttributes(typeof(PureAttribute), false).Length == 0
-                              && (!x.IsStatic || x.GetParameters().Any(p => p.ParameterType == type)));
+                       .All(x =>
+                       {
+                           var args = x.GetParameters();
+                           return x.Name.Equals("GetHashCode") && x.DeclaringType == typeof(object)
+                               || x.Name.Equals("Equals") && (x.DeclaringType == typeof(object) || ieq != null && args.Length == 1 && args[0].ParameterType == type)
+                               || x.Name.Equals("ToString")
+                               || x.Name.Equals("CompareTo") && args.Length == 1 && (icompg != null && args[0].ParameterType == type || icomp != null && args[0].ParameterType == typeof(object))
+                               || x.Name.StartsWith("get_") && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length != 0
+                               || x.Name.StartsWith("set_") && x.IsPrivate && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length != 0
+                               || x.GetCustomAttributes(typeof(PureAttribute), false).Length != 0
+                               || x.IsStatic && !Array.Exists(args, p => p.ParameterType == type);
+                       });
         }
 
         static T DefaultCtor()
