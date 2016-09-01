@@ -29,5 +29,15 @@ namespace Dynamics
         /// The <see cref="System.Type"/> is a generic type definition.
         /// </summary>
         Definition,
+
+        /// <summary>
+        /// Represents pointers to types.
+        /// </summary>
+        Pointer,
+
+        /// <summary>
+        /// Represents managed references to types.
+        /// </summary>
+        Reference,
     }
 }
