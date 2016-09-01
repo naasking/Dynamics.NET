@@ -218,15 +218,19 @@ namespace Dynamics
             var icompg = type.GetInterface(typeof(IComparable<>).MakeGenericType(type).Name);
             var icomp = type.GetInterface("IComparable");
             var icln = type.GetInterface("ICloneable");
+            var iconv = type.GetInterface("IConvertible");
+            var iconvm = typeof(IConvertible).GetMethods().ToDictionary(x => x.Name);
             var typeArgs = new[] { type };
             return type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy)
                        .All(x =>
                        {
                            var args = x.GetParameters();
+                           MethodInfo m;
                            return x.Name.Equals("GetHashCode") && x.DeclaringType == typeof(object)
                                || x.Name.Equals("Equals") && (x.DeclaringType == typeof(object) || ieq != null && args.Length == 1 && args[0].ParameterType == type)
                                || x.Name.Equals("ToString")
                                || x.Name.Equals("Clone") && icln != null && args.Length == 0
+                               || iconv != null && iconvm.TryGetValue(x.Name, out m) && args.Select(z => z.ParameterType).SequenceEqual(m.GetParameters().Select(z => z.ParameterType))
                                || x.Name.Equals("CompareTo") && args.Length == 1 && (icompg != null && args[0].ParameterType == type || icomp != null && args[0].ParameterType == typeof(object))
                                || x.Name.StartsWith("get_") && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length != 0
                                || x.Name.StartsWith("set_") && x.IsPrivate && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length != 0
