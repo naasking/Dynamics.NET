@@ -115,75 +115,59 @@ namespace Dynamics
             // this is more future-proof, just slower:
             // || field.GetCustomAttributes(typeof(COMP.CompilerGeneratedattribute), false)
         }
-
+        
         /// <summary>
-        /// Checks that the type is a generic type with all generic parameters specified.
+        /// The <see cref="Dynamics.Kind"/> classifying the <see cref="System.Type"/>.
         /// </summary>
-        /// <param name="type">The type to test.</param>
-        /// <returns>True if the type is instaniated with all generic parameters, false otherwise.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if argument is null.</exception>
-        /// <remarks>
-        /// This is an extension method on <see cref="System.Type"/> that checks whether
-        /// the Type instance is an instantiated generic type definition:
-        /// <code>
-        /// struct Foo { }
-        /// struct Foo&lt;T&gt; { }
-        /// 
-        /// Console.WriteLine(typeof(Foo).IsGenericTypeInstance());
-        /// Console.WriteLine(typeof(Foo&lt;&gt;).IsGenericTypeInstance());
-        /// Console.WriteLine(typeof(Foo&lt;int&gt;).IsGenericTypeInstance());
-        /// 
-        /// // output:
-        /// // false
-        /// // false
-        /// // true
-        /// </code>
-        /// </remarks>
-        public static bool IsGenericTypeInstance(this Type type)
+        /// <param name="type">The <see cref="System.Type"/> to classify.</param>
+        /// <returns>The <see cref="Dynamics.Kind"/> classifying <paramref name="type"/>.</returns>
+        public static Kind Kind(this Type type)
         {
-            if (type == null) throw new ArgumentNullException("type");
-            return type.IsGenericType && !type.IsGenericTypeDefinition;
+            return type.IsGenericParameter      ? Dynamics.Kind.Parameter:
+                   type.IsGenericType           ? Dynamics.Kind.Application:
+                   type.IsGenericTypeDefinition ? Dynamics.Kind.Definition:
+                                                  Dynamics.Kind.Type;
         }
 
         /// <summary>
-        /// Generates a serialized tree of all type constructors and their type arguments.
+        /// The <see cref="Dynamics.Kind"/> classifying the <see cref="System.Type"/>.
         /// </summary>
-        /// <param name="type">The type to process.</param>
-        /// <returns>A flat list of all non-generic type arguments used in <paramref name="type"/>.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if <paramref name="type"/> is null.</exception>
+        /// <param name="type">The <see cref="System.Type"/> to classify.</param>
+        /// <param name="context">The typing context.</param>
+        /// <returns>The <see cref="Dynamics.Kind"/> classifying <paramref name="type"/>.</returns>
         /// <remarks>
-        /// This extension method on <see cref="System.Type"/> extracts the whole sequence of
-        /// generic type instances, declarations and arguments that make up a type:
-        /// <code>
-        /// var args = typeof(Pair&lt;int, Pair&lt;string,char&gt;&gt;).GetTypeTree();
-        /// // args = new[]
-        /// // {
-        /// //     typeof(Pair&lt;int, Pair&lt;string, char&gt;&gt;),
-        /// //     typeof(Pair&lt;,&gt;),
-        /// //          typeof(int),
-        /// //          typeof(Pair&lt;string, char&gt;),
-        /// //          typeof(Pair&lt;,&gt;),
-        /// //              typeof(string), typeof(char)
-        /// // };
-        /// </code>
+        /// The meaning of the <paramref name="context"/> parameter changes based on the <see cref="Dynamics.Kind"/>
+        /// of the type:
+        /// <list type="table">
+        /// <listheader><term>Kind</term><term>Value of <paramref name="context"/></term></listheader>
+        /// <item><term><see cref="Dynamics.Kind.Parameter"/></term><term>Generic parameter constraints.</term></item>
+        /// <item><term><see cref="Dynamics.Kind.Type"/></term><term><see cref="Type.EmptyTypes"/>.</term></item>
+        /// <item><term><see cref="Dynamics.Kind.Definition"/></term><term>Generic arguments.</term></item>
+        /// <item><term><see cref="Dynamics.Kind.Application"/></term><term>Generic arguments.</term></item>
+        /// </list>
         /// </remarks>
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
-        public static List<Type> GetTypeTree(this Type type)
+        public static Kind Kind(this Type type, out Type[] context)
         {
-            //FIXME: should treat array as a generic type?
-            if (type == null) throw new ArgumentNullException("type");
-            var tree = new List<Type>();
-            tree.Add(type);
-            for (var i = 0; i < tree.Count; ++i)
+            if (type.IsGenericParameter)
             {
-                var t = tree[i];
-                if (t.IsGenericTypeInstance())
-                {
-                    tree.Add(t.GetGenericTypeDefinition());
-                    tree.AddRange(t.GetGenericArguments());
-                }
+                context = type.GetGenericParameterConstraints();
+                return Dynamics.Kind.Parameter;
             }
-            return tree;
+            else if (type.IsGenericType)
+            {
+                context = type.GetGenericArguments();
+                return Dynamics.Kind.Application;
+            }
+            else if (type.IsGenericTypeDefinition)
+            {
+                context = type.GetGenericArguments();
+                return Dynamics.Kind.Definition;
+            }
+            else
+            {
+                context = Type.EmptyTypes;
+                return Dynamics.Kind.Type;
+            }
         }
 
         /// <summary>

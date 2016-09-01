@@ -9,6 +9,7 @@ features are provided out of the box:
  * identifying fields that are compiler-generated
  * finding the compiler-generated fields for auto properties
  * analyzing nested generic types
+ * simplified .NET types with a basic kind system
 
 These are functions that are useful for serialization, runtime type
 and code generation, and similar applications where type structure

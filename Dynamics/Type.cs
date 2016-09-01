@@ -77,7 +77,7 @@ namespace Dynamics
             // Immutable: any types decorated with [Pure] || T has init-only fields whose types are immutable
             // Maybe: if any fields have types with Mutability.Maybe
             // Mutable: otherwise
-            // Need a list of sanitized immutable types from core library: Int32, DateTime, decimal, Exception, Attribute, Tuple<*>, etc.
+            // Need a list of sanitized core immutable types: Int32, DateTime, decimal, Exception, Attribute, Tuple<*>, etc.
             Mutability = 0 < type.GetCustomAttributes(typeof(PureAttribute), false).Length ? Mutability.Immutable:
                          typeof(Delegate).IsAssignableFrom(type) || HasImpureMethods(type) ? Mutability.Mutable:
                                                                                              TransitiveMutability(type, out isMutable);
@@ -235,7 +235,7 @@ namespace Dynamics
                                || x.Name.StartsWith("get_") && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length != 0
                                || x.Name.StartsWith("set_") && x.IsPrivate && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length != 0
                                || x.GetCustomAttributes(typeof(PureAttribute), false).Length != 0
-                               || x.IsStatic && !Array.Exists(args, p => p.ParameterType == type);
+                               || x.IsStatic && !Array.Exists(args, p => p.ParameterType == type); //FIXME: internal fields can bypass mutability analysis
                        });
         }
 
