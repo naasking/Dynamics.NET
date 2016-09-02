@@ -44,6 +44,43 @@ namespace Dynamics
         }
 
         /// <summary>
+        /// Normalizes a field name.
+        /// </summary>
+        /// <param name="field">The field whose name to normalize.</param>
+        /// <returns>
+        /// If <paramref name="field"/> is an auto-generated field from an auto property, the property name is returned.
+        /// Otherwise the field name is returned.
+        /// </returns>
+        /// <remarks>
+        /// This extension method on <see cref="FieldInfo"/> extracts a "normalized" field name. By
+        /// "normalized", I mean that if the field was a compiler-generated backing field for an auto
+        /// property, then it will extract the property name. Otherwise, it will just return the
+        /// field name itself:
+        /// <code>
+        /// public class Foo
+        /// {
+        ///     public int normalField;
+        ///     public int AutoProperty { get; set; }
+        /// }
+        /// var backingField = Types.Property&lt;Foo, int&gt;(x =&gt; x.AutoProperty)
+        ///                         .GetBackingField();
+        /// var normalField = Types.Field&lt;Foo, int&gt;(x =&gt; x.normalField);
+        /// 
+        /// Console.WriteLine(backingField.FieldName());
+        /// Console.WriteLine(normalField.FieldName());
+        /// // output:
+        /// // AutoProperty
+        /// // normalField
+        /// </code>
+        /// </remarks>
+        public static string FieldName(this FieldInfo field)
+        {
+            if (field == null) throw new ArgumentNullException("field");
+            return field.IsBackingField() ? field.Name.Substring(1, field.Name.Length - ">k__BackingField".Length - 1) :
+                                            field.Name;
+        }
+
+        /// <summary>
         /// Obtains the backing field for <paramref name="property"/>, if any.
         /// </summary>
         /// <param name="property">The property whose backing field being obtained.</param>
@@ -445,5 +482,21 @@ namespace Dynamics
             if (saveAssembly) asm.Save(name + ".dll");
             return final;
         }
+
+        #region Internal helpers
+        internal static T[] Copy<T>(this T[] source, Dictionary<object, object> refs)
+        {
+            object copied;
+            if (refs.TryGetValue(source, out copied))
+                return (T[])copied;
+            var x = new T[source.Length];
+            for (int i = 0; i < source.Length; ++i)
+            {
+                x[i] = Type<T>.Copy(source[i], refs);
+            }
+            refs[source] = x;
+            return x;
+        }
+        #endregion
     }
 }

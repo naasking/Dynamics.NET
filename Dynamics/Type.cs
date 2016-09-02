@@ -40,7 +40,7 @@ namespace Dynamics
         /// <summary>
         /// Performs a deep copy of any value.
         /// </summary>
-        static readonly Func<T, T> deepCopy;
+        static readonly Func<T, Dictionary<object, object>, T> deepCopy;
 
         /// <summary>
         /// Dynamically checks value state for mutability.
@@ -83,7 +83,7 @@ namespace Dynamics
                          MutableBlacklist(type)   ? Mutability.Mutable:
                                                     TransitiveMutability(type, out isMutable);
             
-            //deepCopy = Mutability == Mutability.Immutable ? null : GenerateCopy(type);
+            deepCopy = Mutability == Mutability.Immutable ? null : GenerateCopy(type);
         }
 
         /// <summary>
@@ -93,12 +93,7 @@ namespace Dynamics
         /// <returns>A deep copy of the value.</returns>
         public static T Copy(T value)
         {
-            //FIXME: this actually needs a private overload that accepts a Dictionary<object, object> to ensure
-            //we don't visit to prevent infinite recursion in the presence of cycles and to preserve sharing. Structs
-            //should not be added to the map.
-            //FIXME: this should also consult circularity property to check whether to add to visited set.
-            //FIXME: if struct, then just call new(), otherwise call MemberwiseClone().
-            return IsMutable(value) ? deepCopy(value) : value;
+            return Mutability == Mutability.Immutable ? value : Copy(value, new Dictionary<object, object>());
         }
 
         /// <summary>
@@ -110,22 +105,81 @@ namespace Dynamics
         {
             //FIXME: this actually needs a private overload that accepts a HashSet<object> to ensure we don't visit
             //a node more than once.
-            return IsMutable(value, new HashSet<object>());
+            return Mutability == Mutability.Mutable
+                || Mutability == Mutability.Maybe && IsMutable(value, new HashSet<object>());
         }
 
         #region Copy helpers
-        static Func<T, T> GenerateCopy(Type type)
+        internal static T Copy(T value, Dictionary<object, object> refs)
+        {
+            //FIXME: if struct, then just call new(), otherwise call MemberwiseClone().
+            //return IsMutable(value, visited) ? deepCopy(value, visited, refs) : value;
+            return Mutability == Mutability.Immutable ? value : deepCopy(value, refs);
+        }
+
+        static Func<T, Dictionary<object, object>, T> GenerateCopy(Type type)
         {
             var x = Expression.Parameter(type, "x");
+            var refs = Expression.Parameter(typeof(Dictionary<object, object>), "refs");
+            var copied = Expression.Variable(typeof(object), "copied");
+            var tgv = typeof(Dictionary<object, object>).GetMethod("TryGetValue");
+            //var dc = type.IsValueType ? x as Expression : Expression.If;
             var dc = x as Expression;
-            foreach (var field in type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance))
+            if (type.IsArray)
             {
-                var access = Expression.Field(x, field);
-                var copy = typeof(Type<>).MakeGenericType(field.FieldType)
-                                         .GetMethod("Copy");
-                dc = Expression.Assign(access, Expression.Call(copy, access));
+                var acopy = new Func<int[], Dictionary<object, object>, int[]>(Runtime.Copy<int>).Method.GetGenericMethodDefinition();
+                dc = Expression.Call(acopy.MakeGenericMethod(type.GetElementType()), x, refs);
             }
-            return Expression.Lambda<Func<T, T>>(dc, x).Compile();
+            else //if (type.IsValueType || HasEmptyConstructor(type))
+            {
+                var members = new List<MemberBinding>();
+                var rofields = new Dictionary<string, Expression>();
+                var noEmptyCtor = !type.IsValueType && !HasEmptyConstructor(type);
+                foreach (var field in type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance))
+                {
+                    var access = Expression.Field(x, field);
+                    var copy = typeof(Type<>).MakeGenericType(field.FieldType)
+                                             .GetMethod("Copy", BindingFlags.Static | BindingFlags.NonPublic, null,
+                                                        new[] { field.FieldType, typeof(Dictionary<object, object>) }, null);
+                    var ecopy = Expression.Call(copy, access, refs);
+                    if (field.IsInitOnly || noEmptyCtor)
+                        rofields.Add(field.FieldName().ToLower(), ecopy);
+                    else
+                        members.Add(Expression.Bind(field, ecopy));
+                }
+                var newe = rofields.Count == 0 ? Expression.New(type):
+                                                 ConstructNew(type, rofields);
+                dc = Expression.MemberInit(newe, members);
+            }
+            //else
+            //{
+            //    var ctors = type.GetConstructors();
+            //    var fields = type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+            //}
+            return Expression.Lambda<Func<T, Dictionary<object, object>, T>>(dc, x, refs).Compile();
+        }
+        static NewExpression ConstructNew(Type type, Dictionary<string, Expression> copies)
+        {
+            var ctors = type.GetConstructors();
+            ConstructorInfo ctor = null;
+            var bindings = new List<Expression>();
+            foreach (var x in ctors)
+            {
+                ctor = x;
+                var args = x.GetParameters();
+                if (args.Length != copies.Count)
+                    continue;
+                foreach (var p in args)
+                {
+                    Expression e;
+                    if (copies.TryGetValue(p.Name.ToLower(), out e))
+                        bindings.Add(e);
+                    else
+                        bindings.Add(copies.Values.First(z => z.Type == p.ParameterType));
+                }
+            }
+            //return ctor == null ? Expression.New(type) : Expression.New(ctor, bindings);
+            return Expression.New(ctor, bindings);
         }
         #endregion
         #region Constructor helpers
