@@ -15,6 +15,34 @@ namespace Dynamics
     public static class Runtime
     {
         /// <summary>
+        /// Checks subtyping relationships.
+        /// </summary>
+        /// <param name="subtype">The subtype.</param>
+        /// <param name="supertype">The potential supertype.</param>
+        /// <returns>True if <paramref name="subtype"/> is a subtype of <paramref name="supertype"/>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if argument is null.</exception>
+        /// <remarks>
+        /// This is an extension method on <see cref="System.Type"/> that checks subtyping relationships
+        /// on runtime types and type arguments:
+        /// <code>
+        /// Console.WriteLine(typeof(int).Subtypes(typeof(object)));
+        /// Console.WriteLine(typeof(int).Subtypes&lt;object&gt;());
+        /// Console.WriteLine(typeof(int).Subtypes&lt;string&gt;());
+        /// </code>
+        /// However, this check has an important limitation when dealing with type parameters. See
+        /// <see cref="System.Type.IsAssignableFrom"/>.
+        /// </remarks>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "supertype")]
+        public static bool Subtypes(this Type subtype, Type supertype)
+        {
+            if (supertype == null) throw new ArgumentNullException("supertype");
+            //FUTURE: this only returns true for generic parameter if subtype is exactly a type constraint
+            //that appears on supertype. A real subtyping relation would return true if it subtypes all
+            //of the constraints.
+            return supertype.IsAssignableFrom(subtype);
+        }
+
+        /// <summary>
         /// Obtains the backing field for <paramref name="property"/>, if any.
         /// </summary>
         /// <param name="property">The property whose backing field being obtained.</param>

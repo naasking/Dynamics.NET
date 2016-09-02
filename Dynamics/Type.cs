@@ -234,58 +234,22 @@ namespace Dynamics
         static bool AllPureMethods(Type type)
         {
             // T is impure if any method is not decorated with [Pure] or is a static method that does not accept a T
-            // skip standard methods, ie. GetHashCode, Equals, ToString, CompareTo, get_* and private set_* tagged with [CompilerGenerated], etc.
             //FIXME: should also exclude operators?
-            var ieq = type.GetInterface("IEquatable`1");
-            var icompg = type.GetInterface(typeof(IComparable<>).MakeGenericType(type).Name);
-            var icomp = type.GetInterface("IComparable");
-            var icln = type.GetInterface("ICloneable");
-            var iconv = type.GetInterface("IConvertible");
-            var iconvm = typeof(IConvertible).GetMethods().ToDictionary(x => x.Name);
-            var typeArgs = new[] { type };
+            var mflags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy;
+            var types = new[]
+            {
+                typeof(IFormattable), typeof(IConvertible), typeof(ICloneable), typeof(IComparable),
+                Kind.Definition.Apply(typeof(IComparable<>), type), Kind.Definition.Apply(typeof(IEquatable<>), type),
+                typeof(object), typeof(ValueType)
+            }
+            .Where(x => type.Subtypes(x));
+            var methods = types.SelectMany(x => x.IsInterface ? type.GetInterfaceMap(x).TargetMethods : x.GetMethods(mflags))
+                               .Aggregate(new HashSet<int>(), (acc, x) => { acc.Add(x.GetBaseDefinition().MetadataToken); return acc; });
             //FIXME: internal fields can bypass mutability analysis
-            return type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy)
-                       .All(x =>
-                       {
-                           var args = x.GetParameters();
-                           MethodInfo m;
-                           // whitelist of standard methods blessed as pure
-                           var pure = false;
-                           switch (x.Name)
-                           {
-                               case "GetHashCode":
-                                   pure = x.IsVirtual && args.Length == 0;
-                                   break;
-                               case "Equals":
-                                   pure = x.IsVirtual && args.Length == 1 && (args[0].ParameterType == typeof(object) || ieq != null && args.Length == 1 && args[0].ParameterType == type)
-                                       || x.IsStatic && x.DeclaringType == typeof(object);
-                                   break;
-                               case "ToString":
-                                   pure = x.IsVirtual && args.Length == 0 && x.ReturnType == typeof(string);
-                                   break;
-                               case "Finalize":
-                                   pure = x.IsVirtual && args.Length == 0 && x.ReturnType == typeof(void);
-                                   break;
-                               case "GetType":
-                                   pure = x.DeclaringType == typeof(object);
-                                   break;
-                               case "MemberwiseClone":
-                                   pure = x.DeclaringType == typeof(object);
-                                   break;
-                               case "Clone":
-                                   pure = icln != null && args.Length == 0 && x.ReturnType == typeof(object);
-                                   break;
-                               case "CompareTo":
-                                   pure = args.Length == 1 && (icompg != null && args[0].ParameterType == type || icomp != null && args[0].ParameterType == typeof(object));
-                                   break;
-                           }
-                           return pure
-                               || x.Has<PureAttribute>()
-                               || x.IsPureGetter()
-                               || x.IsPureSetter()
-                               || x.IsStatic && !Array.Exists(args, p => p.ParameterType == type)
-                               || iconv != null && iconvm.TryGetValue(x.Name, out m) && args.Select(z => z.ParameterType).SequenceEqual(m.GetParameters().Select(z => z.ParameterType));
-                       });
+            return type.GetMethods(mflags)
+                       .All(x => methods.Contains(x.GetBaseDefinition().MetadataToken)
+                              || x.Has<PureAttribute>() || x.IsPureGetter() || x.IsPureSetter()
+                              || x.IsStatic && !Array.Exists(x.GetParameters(), p => p.ParameterType == type));
         }
 
         static T DefaultCtor()
