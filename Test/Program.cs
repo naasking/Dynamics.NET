@@ -148,6 +148,8 @@ namespace Test
             IsMutable<MutProperty>();
             IsMutable<ImpureMethod>();
             IsMutable<PureImpureMethod>();
+            IsMutable<TransitiveField<int[]>>();
+            IsMutable<TransitiveProp<int[]>>();
         }
         static void IsMutable<T>()
         {
