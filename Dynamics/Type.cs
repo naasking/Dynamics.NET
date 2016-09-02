@@ -190,7 +190,7 @@ namespace Dynamics
                             break;
                         case Mutability.Maybe:
                             mut = Mutability.Maybe;
-                            chkMut = Expression.And(Expression.Call(Expression.Field(x, field), ftype.GetMethod("IsMutable")), chkMut);
+                            //chkMut = Expression.And(Expression.Call(Expression.Field(x, field), ftype.GetMethod("IsMutable")), chkMut);
                             break;
                     }
                 }

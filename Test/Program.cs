@@ -9,6 +9,10 @@ namespace Test
 {
     class Program
     {
+        sealed class TransitiveMut<T>
+        {
+            readonly T field;
+        }
         #region Immutable checks
         struct ROField
         {
@@ -101,6 +105,7 @@ namespace Test
             IsImmutable<PureProp>();
             IsImmutable<Formattable>();
             IsImmutable<KeyValuePair<int, char>>();
+            IsImmutable<TransitiveMut<int>>();
         }
         static void IsImmutable<T>()
         {
@@ -145,8 +150,15 @@ namespace Test
         }
         #endregion
         #region Maybe mutable checks
+        class MaybeMut
+        {
+            readonly int field;
+        }
         static void CheckMaybeMutable()
         {
+            IsMaybeMutable<object>();
+            IsMaybeMutable<MaybeMut>();
+            IsMaybeMutable<TransitiveMut<object>>();
             IsMaybeMutable<Tuple<int, string>>();
         }
         static void IsMaybeMutable<T>()
