@@ -258,6 +258,7 @@ namespace Test
             NotRecursive<ROField>();
             //MaybeCircular<Self>();
             IsRecursive<Self>();
+            IsRecursive<EquatableSeq<object>>();
         }
         static void IsRecursive<T>()
         {

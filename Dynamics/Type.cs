@@ -90,7 +90,7 @@ namespace Dynamics
                          MutableBlacklist(type)   ? Mutability.Mutable:
                                                     TransitiveMutability(type, out isMutable);
 
-            var visited = new Type[8];
+            var visited = new Type[6];
             Cycles = DetectCycles(type, ref visited, 0);
             
             deepCopy = Mutability == Mutability.Immutable ? null : GenerateCopy(type);
@@ -364,6 +364,8 @@ namespace Dynamics
         #region Circularity helpers
         static Cycles DetectCycles(Type type, ref Type[] visited, int length)
         {
+            if (type.HasElementType)
+                return DetectCycles(type.GetElementType(), ref visited, length);
             if (HasParentSubtype(type, visited, length))
                 return Cycles.Yes;
             if (length == visited.Length)
