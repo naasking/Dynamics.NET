@@ -17,6 +17,7 @@ namespace Test
         sealed class TransitiveProp<T>
         {
             public T Prop { get; private set; }
+            public TransitiveProp(T value) { Prop = value; }
         }
         #region Immutable checks
         struct ROField
@@ -182,10 +183,12 @@ namespace Test
         }
         static void RuntimeMutable()
         {
-            IsImmutable<MaybeMut>(new MaybeMut());
+            IsImmutable(new MaybeMut());
             IsMutable<MaybeMut>(new DefMut());
-            IsImmutable<TransitiveField<object>>(new TransitiveField<object>("foo"));
-            IsMutable<TransitiveField<object>>(new TransitiveField<object>(new[] { 2, 3 }));
+            IsImmutable(new TransitiveField<object>("foo"));
+            IsMutable(new TransitiveField<object>(new[] { 2, 3 }));
+            IsImmutable(new TransitiveProp<object>("foo"));
+            IsMutable(new TransitiveProp<object>(new[] { 2, 3 }));
         }
         static void IsImmutable<T>(T value)
         {
