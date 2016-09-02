@@ -275,12 +275,12 @@ namespace Dynamics
                 || type == typeof(decimal)
                 || type == typeof(string)
                 || type == typeof(System.Linq.Expressions.Expression)
-                || typeof(Enum).IsAssignableFrom(type);
+                || type.Subtypes(typeof(Enum));
         }
 
         static bool MutableBlacklist(Type type)
         {
-            return typeof(Delegate).IsAssignableFrom(type)
+            return type.Subtypes(typeof(Delegate))
                 || type.IsArray;
         }
 
