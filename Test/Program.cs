@@ -253,24 +253,20 @@ namespace Test
         #region Check circularity
         static void CircularityTests()
         {
-            NotRecursive<int>();
-            NotRecursive<string>();
-            NotRecursive<ROField>();
-            NotRecursive<int[]>();
-            //MaybeCircular<Self>();
-            IsRecursive<Self>();
-            IsRecursive<EquatableSeq<object>>();
-            IsRecursive<object[]>();
+            IsAcyclic<int>();
+            IsAcyclic<string>();
+            IsAcyclic<ROField>();
+            IsAcyclic<int[]>();
+            IsCyclic<Self>();
+            IsCyclic<EquatableSeq<object>>();
+            IsCyclic<EquatableSeq<object[]>>();
+            IsCyclic<object[]>();
         }
-        static void IsRecursive<T>()
+        static void IsCyclic<T>()
         {
             Assert(Type<T>.Cycles == Cycles.Yes);
         }
-        //static void MaybeCircular<T>()
-        //{
-        //    Assert(Type<T>.Circularity == Circularity.Maybe);
-        //}
-        static void NotRecursive<T>()
+        static void IsAcyclic<T>()
         {
             Assert(Type<T>.Cycles == Cycles.No);
         }
