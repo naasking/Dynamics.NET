@@ -63,6 +63,14 @@ namespace Test
             [System.Diagnostics.Contracts.Pure]
             public int X { get; set; }
         }
+        sealed class Formattable : IFormattable
+        {
+            public int X { get; private set; }
+            public string ToString(string format, IFormatProvider formatProvider)
+            {
+                return ToString();
+            }
+        }
 
         static void CheckImmutable()
         {
@@ -91,6 +99,8 @@ namespace Test
             IsImmutable<Equatable>();
             IsImmutable<PureType>();
             IsImmutable<PureProp>();
+            IsImmutable<Formattable>();
+            IsImmutable<KeyValuePair<int, char>>();
         }
         static void IsImmutable<T>()
         {
@@ -134,10 +144,21 @@ namespace Test
             Debug.Assert(Type<T>.Mutability == Mutability.Mutable);
         }
         #endregion
+        #region Maybe mutable checks
+        static void CheckMaybeMutable()
+        {
+            IsMaybeMutable<Tuple<int, string>>();
+        }
+        static void IsMaybeMutable<T>()
+        {
+            Debug.Assert(Type<T>.Mutability == Mutability.Maybe);
+        }
+        #endregion
         static void Main(string[] args)
         {
             CheckImmutable();
             CheckMutable();
+            CheckMaybeMutable();
         }
     }
 }

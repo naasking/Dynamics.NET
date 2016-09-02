@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Runtime.Serialization;
@@ -196,15 +197,16 @@ namespace Dynamics
             }
             if (mut == Mutability.Maybe)
             {
-                if (!type.IsSealed)
-                {
-                    // perform a dynamic type check and dispatch to dynamic type for non-sealed types
-                    var getType = type.GetMethod("GetType", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
-                    var typeCheck = Expression.Equal(Expression.Call(x, getType), Expression.Constant(type));
-                    var subMut = type.GetMethod("IsSubtypeMutable", BindingFlags.NonPublic | BindingFlags.Static);
-                    chkMut = Expression.Condition(typeCheck, chkMut, Expression.Call(subMut, x));
-                }
-                isMutable = Expression.Lambda<Func<T, bool>>(chkMut, x).Compile();
+                //if (!type.IsSealed)
+                //{
+                //    // perform a dynamic type check and dispatch to dynamic type for non-sealed types
+                //    var getType = type.GetMethod("GetType", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
+                //    var typeCheck = Expression.Equal(Expression.Call(x, getType), Expression.Constant(type));
+                //    var subMut = type.GetMethod("IsSubtypeMutable", BindingFlags.NonPublic | BindingFlags.Static);
+                //    chkMut = Expression.Condition(typeCheck, chkMut, Expression.Call(subMut, x));
+                //}
+                //isMutable = Expression.Lambda<Func<T, bool>>(chkMut, x).Compile();
+                isMutable = null;
             }
             else
             {
@@ -246,6 +248,7 @@ namespace Dynamics
                 Kind.Definition.Apply(typeof(IOrderedEnumerable<>), type),
                 Kind.Definition.Apply(typeof(IQueryable<>), type), typeof(IQueryable),
                 typeof(IReflect), typeof(ISafeSerializationData), typeof(IServiceProvider),
+                Type.GetType("System.ITuple, mscorlib"), typeof(IStructuralEquatable), typeof(IStructuralComparable),
                 typeof(ISurrogateSelector), typeof(object), typeof(ValueType)
             }
             .Where(x => type.Subtypes(x));
