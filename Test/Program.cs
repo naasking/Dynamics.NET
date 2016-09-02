@@ -29,6 +29,26 @@ namespace Test
                 X = x;
             }
         }
+        sealed class EqualsOverride
+        {
+            public int X { get; private set; }
+            public override bool Equals(object obj)
+            {
+                return obj is EqualsOverride && X == (obj as EqualsOverride).X;
+            }
+            public override int GetHashCode()
+            {
+                return X;
+            }
+        }
+        sealed class Equatable : IEquatable<Equatable>
+        {
+            public int X { get; private set; }
+            public bool Equals(Equatable obj)
+            {
+                return X == obj.X;
+            }
+        }
 
         static void CheckImmutable()
         {
@@ -53,6 +73,8 @@ namespace Test
             IsImmutable<UriKind>();
             IsImmutable<ROField>();
             IsImmutable<ROProperty>();
+            IsImmutable<EqualsOverride>();
+            IsImmutable<Equatable>();
         }
         static void IsImmutable<T>()
         {
