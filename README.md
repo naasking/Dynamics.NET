@@ -5,11 +5,11 @@ The following features are provided out of the box:
 
  * generic deep copying: Type<T>.Copy(T value)
  * type mutability heuristics: Type<T>.Mutability and Type<T>.IsMutable(value)
- * precise type recursion checks: Type<T>.Recursive
+ * precise type recursion checks: Type<T>.Cycles
  * identifying fields and properties that are compiler-generated
  * finding the compiler-generated fields for auto properties
  * analyzing nested generic types
- * simplified .NET types with a basic kind system via Dynamics.Kind
+ * simplified .NET types with kinding via Dynamics.Kind
 
 These are functions that are useful for serialization, runtime type
 and code generation, and similar applications where type structure
