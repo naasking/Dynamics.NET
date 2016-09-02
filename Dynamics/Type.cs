@@ -103,8 +103,6 @@ namespace Dynamics
         /// <returns></returns>
         public static bool IsMutable(T value)
         {
-            //FIXME: this actually needs a private overload that accepts a HashSet<object> to ensure we don't visit
-            //a node more than once.
             return Mutability == Mutability.Mutable
                 || Mutability == Mutability.Maybe && IsMutable(value, new HashSet<object>());
         }
@@ -112,8 +110,6 @@ namespace Dynamics
         #region Copy helpers
         internal static T Copy(T value, Dictionary<object, object> refs)
         {
-            //FIXME: if struct, then just call new(), otherwise call MemberwiseClone().
-            //return IsMutable(value, visited) ? deepCopy(value, visited, refs) : value;
             return Mutability == Mutability.Immutable ? value : deepCopy(value, refs);
         }
 
@@ -121,7 +117,6 @@ namespace Dynamics
         {
             var x = Expression.Parameter(type, "x");
             var refs = Expression.Parameter(typeof(Dictionary<object, object>), "refs");
-            //var dc = type.IsValueType ? x as Expression : Expression.IfThenElse(Expression.Call(refs, tgv, x, copied), );
             var dc = x as Expression;
             if (type.IsArray)
             {
@@ -161,6 +156,7 @@ namespace Dynamics
             }
             return Expression.Lambda<Func<T, Dictionary<object, object>, T>>(dc, x, refs).Compile();
         }
+
         static NewExpression ConstructNew(Type type, Dictionary<string, Expression> copies)
         {
             var ctors = type.GetConstructors();
@@ -174,11 +170,11 @@ namespace Dynamics
                     continue;
                 foreach (var p in args)
                 {
+                    // find the field whose name matches the constructor parameter, else find one matching the type
                     Expression e;
-                    if (copies.TryGetValue(p.Name.ToLower(), out e))
-                        bindings.Add(e);
-                    else
-                        bindings.Add(copies.Values.First(z => z.Type == p.ParameterType));
+                    if (!copies.TryGetValue(p.Name.ToLower(), out e))
+                        e = copies.Values.First(z => z.Type == p.ParameterType);
+                    bindings.Add(e);
                 }
             }
             //return ctor == null ? Expression.New(type) : Expression.New(ctor, bindings);
