@@ -9,6 +9,10 @@ namespace Test
 {
     class Program
     {
+        static void Assert(bool cond)
+        {
+            if (!cond) Debugger.Break();
+        }
         sealed class TransitiveField<T>
         {
             readonly T field;
@@ -116,7 +120,7 @@ namespace Test
         }
         static void IsImmutable<T>()
         {
-            Debug.Assert(Type<T>.Mutability == Mutability.Immutable);
+            Assert(Type<T>.Mutability == Mutability.Immutable);
         }
         #endregion
         #region Mutable checks
@@ -155,7 +159,7 @@ namespace Test
         }
         static void IsMutable<T>()
         {
-            Debug.Assert(Type<T>.Mutability == Mutability.Mutable);
+            Assert(Type<T>.Mutability == Mutability.Mutable);
         }
         #endregion
         #region Maybe mutable checks
@@ -173,7 +177,7 @@ namespace Test
         }
         static void IsMaybeMutable<T>()
         {
-            Debug.Assert(Type<T>.Mutability == Mutability.Maybe);
+            Assert(Type<T>.Mutability == Mutability.Maybe);
         }
         #endregion
         #region Runtime mutability checks
@@ -206,11 +210,11 @@ namespace Test
         }
         static void IsImmutable<T>(T value)
         {
-            Debug.Assert(!Type<T>.IsMutable(value));
+            Assert(!Type<T>.IsMutable(value));
         }
         static void IsMutable<T>(T value)
         {
-            Debug.Assert(Type<T>.IsMutable(value));
+            Assert(Type<T>.IsMutable(value));
         }
         #endregion
 
@@ -228,15 +232,21 @@ namespace Test
         static void CopyTests()
         {
             IsCopied(0);
-            IsCopied("foo");
-            IsCopied(new DefMut { Bar = "Hello World" });
+            IsShared("foo");
+            IsCopied(new DefMut { Bar = "Hello World" }, (x, y) => x.Bar == y.Bar);
             IsCopied(new EquatableSeq<int>(2, 3));
         }
-        static void IsCopied<T>(T orig)
+        static void IsShared<T>(T orig)
         {
             var copy = Type<T>.Copy(orig);
-            Debug.Assert(!ReferenceEquals(orig, copy));
-            Debug.Assert(Type<T>.DefaultEquals(orig, copy));
+            Assert(ReferenceEquals(orig, copy));
+            Assert(Type<T>.DefaultEquals(orig, copy));
+        }
+        static void IsCopied<T>(T orig, Func<T, T, bool> eq = null)
+        {
+            var copy = Type<T>.Copy(orig);
+            Assert(!ReferenceEquals(orig, copy));
+            Assert(eq == null && Type<T>.DefaultEquals(orig, copy) || eq != null && eq(orig, copy));
         }
         #endregion
 
