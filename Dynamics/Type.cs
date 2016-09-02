@@ -45,7 +45,7 @@ namespace Dynamics
         /// <summary>
         /// Dynamically checks value state for mutability.
         /// </summary>
-        static readonly Func<T, bool> isMutable;
+        static readonly Func<T, HashSet<object>, bool> isMutable;
 
         //FIXME: add structural equality?
         //FIXME: add structural comparison?
@@ -63,7 +63,7 @@ namespace Dynamics
         /// <summary>
         /// Used to dispatch to the dynamic type to check for mutability.
         /// </summary>
-        static readonly ConcurrentDictionary<Type, Func<T, bool>> subtypeMutability = new ConcurrentDictionary<Type, Func<T, bool>>();
+        static readonly ConcurrentDictionary<Type, Func<T, HashSet<object>, bool>> subtypeMutability = new ConcurrentDictionary<Type, Func<T, HashSet<object>, bool>>();
 
         static Type()
         {
@@ -84,25 +84,6 @@ namespace Dynamics
                                                     TransitiveMutability(type, out isMutable);
             
             //deepCopy = Mutability == Mutability.Immutable ? null : GenerateCopy(type);
-        }
-
-        static bool ImmutableWhitelist(Type type)
-        {
-            return type.Has<PureAttribute>()
-                || type.IsPrimitive
-                || type == typeof(DateTime)
-                || type == typeof(TimeSpan)
-                || type == typeof(DateTimeOffset)
-                || type == typeof(decimal)
-                || type == typeof(string)
-                || type == typeof(System.Linq.Expressions.Expression)
-                || typeof(Enum).IsAssignableFrom(type);
-        }
-
-        static bool MutableBlacklist(Type type)
-        {
-            return typeof(Delegate).IsAssignableFrom(type)
-                || type.IsArray;
         }
 
         /// <summary>
@@ -128,22 +109,11 @@ namespace Dynamics
         public static bool IsMutable(T value)
         {
             //FIXME: this actually needs a private overload that accepts a HashSet<object> to ensure we don't visit
-            //a node more than once. Actually, should probably use Dictionary<object, object> so we can share the
-            //map with Copy so we don't need to track both a HashSet and a Dictionary.
-            switch (Mutability)
-            {
-                case Mutability.Immutable:
-                    return false;
-                case Mutability.Mutable:
-                    return true;
-                case Mutability.Maybe:
-                    return isMutable(value);
-                default:
-                    throw new InvalidOperationException("Unknown Mutability value.");
-            }
+            //a node more than once.
+            return IsMutable(value, new HashSet<object>());
         }
 
-        #region Internal helper methods
+        #region Copy helpers
         static Func<T, T> GenerateCopy(Type type)
         {
             var x = Expression.Parameter(type, "x");
@@ -157,18 +127,65 @@ namespace Dynamics
             }
             return Expression.Lambda<Func<T, T>>(dc, x).Compile();
         }
-
+        #endregion
+        #region Constructor helpers
         static bool HasEmptyConstructor(Type type)
         {
             return null != type.GetConstructor(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance, null, Type.EmptyTypes, null);
         }
 
-        static Mutability TransitiveMutability(Type type, out Func<T, bool> isMutable)
+        static T DefaultCtor()
+        {
+            return default(T);
+        }
+        #endregion
+
+        #region Mutability helpers
+        static bool IsMutable(T value, HashSet<object> visited)
+        {
+            //FIXME: this actually needs a private overload that accepts a HashSet<object> to ensure we don't visit
+            //a node more than once.
+            switch (Mutability)
+            {
+                case Mutability.Immutable:
+                    return false;
+                case Mutability.Mutable:
+                    return true;
+                case Mutability.Maybe:
+                    return value is ValueType || visited.Add(value)
+                         ? isMutable(value, visited)
+                         : false;
+                default:
+                    throw new InvalidOperationException("Unknown Mutability value.");
+            }
+        }
+
+        static bool ImmutableWhitelist(Type type)
+        {
+            return type.Has<PureAttribute>()
+                || type.IsPrimitive
+                || type == typeof(DateTime)
+                || type == typeof(TimeSpan)
+                || type == typeof(DateTimeOffset)
+                || type == typeof(decimal)
+                || type == typeof(string)
+                || type == typeof(System.Linq.Expressions.Expression)
+                || typeof(Enum).IsAssignableFrom(type);
+        }
+
+        static bool MutableBlacklist(Type type)
+        {
+            return typeof(Delegate).IsAssignableFrom(type)
+                || type.IsArray;
+        }
+
+        static Mutability TransitiveMutability(Type type, out Func<T, HashSet<object>, bool> isMutable)
         {
             // sealed types are immutable if they have init-only fields and all fields are immutable
             // non-sealed types may not be immutable, and so generate a residual program to check the dynamic state
             var typeMutable = typeof(Type<>).GetField("Mutability");
             var x = Expression.Parameter(typeof(T), "x");
+            var visited = Expression.Parameter(typeof(HashSet<object>), "visited");
             var chkMut = Expression.Constant(false) as Expression;
             var mut = type.IsSealed ? Mutability.Immutable : Mutability.Maybe;
             var pureMethods = AllPureMethods(type);
@@ -190,8 +207,9 @@ namespace Dynamics
                             break;
                         case Mutability.Maybe:
                             mut = Mutability.Maybe;
-                            var fmut = ftype.GetMethod("IsMutable", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-                            chkMut = Expression.Or(Expression.Call(fmut, Expression.Field(x, field)), chkMut);
+                            var fmut = ftype.GetMethod("IsMutable", BindingFlags.Static | BindingFlags.NonPublic,
+                                                       null, new[] { field.FieldType, typeof(HashSet<object>) }, null);
+                            chkMut = Expression.Or(Expression.Call(fmut, Expression.Field(x, field), visited), chkMut);
                             break;
                     }
                 }
@@ -203,10 +221,10 @@ namespace Dynamics
                     // perform a dynamic type check and dispatch to dynamic type for non-sealed types
                     var getType = new Func<Type>("".GetType).Method.GetBaseDefinition();
                     var typeCheck = Expression.Equal(Expression.Call(x, getType), Expression.Constant(type));
-                    var subMut = new Func<T, bool>(IsSubtypeMutable).Method;
-                    chkMut = Expression.Condition(typeCheck, chkMut, Expression.Call(subMut, x));
+                    var subMut = new Func<T, HashSet<object>, bool>(IsSubtypeMutable).Method;
+                    chkMut = Expression.Condition(typeCheck, chkMut, Expression.Call(subMut, x, visited));
                 }
-                isMutable = Expression.Lambda<Func<T, bool>>(chkMut, x).Compile();
+                isMutable = Expression.Lambda<Func<T, HashSet<object>, bool>>(chkMut, x, visited).Compile();
             }
             else
             {
@@ -215,22 +233,22 @@ namespace Dynamics
             return mut;
         }
 
-        static bool IsSubtypeMutable(T value)
+        static bool IsSubtypeMutable(T value, HashSet<object> visited)
         {
-            Func<T, bool> f;
+            Func<T, HashSet<object>, bool> f;
             var type = value.GetType();
             if (!subtypeMutability.TryGetValue(type, out f))
             {
-                var dispatch = new Func<T, bool>(DispatchIsMutable<T>).Method.GetGenericMethodDefinition();
-                f = subtypeMutability[type] = (Func<T, bool>)Delegate.CreateDelegate(typeof(Func<T, bool>), dispatch.MakeGenericMethod(type));
+                var dispatch = new Func<T, HashSet<object>, bool>(DispatchIsMutable<T>).Method.GetGenericMethodDefinition();
+                f = subtypeMutability[type] = (Func<T, HashSet<object>, bool>)Delegate.CreateDelegate(typeof(Func<T, HashSet<object>, bool>), dispatch.MakeGenericMethod(type));
             }
-            return f(value);
+            return f(value, visited);
         }
 
-        static bool DispatchIsMutable<T0>(T value)
+        static bool DispatchIsMutable<T0>(T value, HashSet<object> visited)
             where T0 : T
         {
-            return Type<T0>.IsMutable((T0)value);
+            return Type<T0>.IsMutable((T0)value, visited);
         }
 
         static bool AllPureMethods(Type type)
@@ -260,11 +278,6 @@ namespace Dynamics
                        .All(x => methods.Contains(x.GetBaseDefinition().MetadataToken)
                               || x.Has<PureAttribute>() || x.IsPureGetter() || x.IsPureSetter()
                               || x.IsStatic && !Array.Exists(x.GetParameters(), p => p.ParameterType == type));
-        }
-
-        static T DefaultCtor()
-        {
-            return default(T);
         }
         #endregion
     }

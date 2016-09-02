@@ -181,6 +181,18 @@ namespace Test
         {
             public string Bar { get; set; }
         }
+        sealed class Self
+        {
+            readonly object field;
+            public Self()
+            {
+                field = this;
+            }
+            public Self(object x)
+            {
+                field = x;
+            }
+        }
         static void RuntimeMutable()
         {
             IsImmutable(new MaybeMut());
@@ -189,6 +201,8 @@ namespace Test
             IsMutable(new TransitiveField<object>(new[] { 2, 3 }));
             IsImmutable(new TransitiveProp<object>("foo"));
             IsMutable(new TransitiveProp<object>(new[] { 2, 3 }));
+            IsImmutable(new Self());
+            IsMutable(new Self(new[] { "", "hello world!" }));
         }
         static void IsImmutable<T>(T value)
         {
