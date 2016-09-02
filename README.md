@@ -1,15 +1,15 @@
 # Dynamics.NET
 
-Extensions for runtime reflection and structural induction. The following
-features are provided out of the box:
+Extensions for efficient runtime reflection and structural induction.
+The following features are provided out of the box:
 
- * generic deep copying
- * type mutability heuristics
- * precise type circularity checks
- * identifying fields that are compiler-generated
+ * generic deep copying: Type<T>.Copy(T value)
+ * type mutability heuristics: Type<T>.Mutability and Type<T>.IsMutable(value)
+ * precise type circularity checks: Type<T>.Circularity
+ * identifying fields and properties that are compiler-generated
  * finding the compiler-generated fields for auto properties
  * analyzing nested generic types
- * simplified .NET types with a basic kind system
+ * simplified .NET types with a basic kind system via Dynamics.Kind
 
 These are functions that are useful for serialization, runtime type
 and code generation, and similar applications where type structure

@@ -35,7 +35,7 @@ namespace Dynamics
         /// <summary>
         /// Exposes whether the type structure allows cycles.
         /// </summary>
-        public static readonly Circularity Circularity;
+        public static readonly RecursiveType RecursiveType;
 
         /// <summary>
         /// Performs a deep copy of any value.
@@ -89,6 +89,9 @@ namespace Dynamics
             Mutability = ImmutableWhitelist(type) ? Mutability.Immutable:
                          MutableBlacklist(type)   ? Mutability.Mutable:
                                                     TransitiveMutability(type, out isMutable);
+
+            var visited = new Type[8];
+            RecursiveType = DetectCycles(type, ref visited, 0);
             
             deepCopy = Mutability == Mutability.Immutable ? null : GenerateCopy(type);
         }
@@ -106,8 +109,8 @@ namespace Dynamics
         /// <summary>
         /// Checks a value's mutability.
         /// </summary>
-        /// <param name="value"></param>
-        /// <returns></returns>
+        /// <param name="value">The value to check for mutability.</param>
+        /// <returns>True if the current configuration is mutable, false otherwise.</returns>
         public static bool IsMutable(T value)
         {
             return Mutability == Mutability.Mutable
@@ -205,6 +208,7 @@ namespace Dynamics
             return Expression.New(ctor, bindings);
         }
         #endregion
+
         #region Constructor helpers
         static bool HasEmptyConstructor(Type type)
         {
@@ -339,6 +343,32 @@ namespace Dynamics
                        .All(x => methods.Contains(x.GetBaseDefinition().MetadataToken)
                               || x.Has<PureAttribute>() || x.IsPureGetter() || x.IsPureSetter()
                               || x.IsStatic && !Array.Exists(x.GetParameters(), p => p.ParameterType == type));
+        }
+        #endregion
+
+        #region Circularity helpers
+        static RecursiveType DetectCycles(Type type, ref Type[] visited, int length)
+        {
+            if (HasParentSubtype(type, visited, length))
+                return RecursiveType.Yes;
+            if (length == visited.Length)
+                Array.Resize(ref visited, visited.Length * 2);
+            visited[length] = type;
+            foreach (var x in type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
+            {
+                if (!type.IsPrimitive && RecursiveType.Yes == DetectCycles(x.FieldType, ref visited, length + 1))
+                    return RecursiveType.Yes;
+            }
+            return RecursiveType.No;
+        }
+        internal static bool HasParentSubtype(Type type, Type[] array, int length)
+        {
+            for (int i = 0; i < length; ++i)
+            {
+                if (array[i] == type || array[i].Subtypes(type))
+                    return true;
+            }
+            return false;
         }
         #endregion
     }

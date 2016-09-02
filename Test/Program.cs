@@ -250,8 +250,32 @@ namespace Test
         }
         #endregion
 
+        #region Check circularity
+        static void CircularityTests()
+        {
+            NotRecursive<int>();
+            NotRecursive<string>();
+            NotRecursive<ROField>();
+            //MaybeCircular<Self>();
+            IsRecursive<Self>();
+        }
+        static void IsRecursive<T>()
+        {
+            Assert(Type<T>.RecursiveType == RecursiveType.Yes);
+        }
+        //static void MaybeCircular<T>()
+        //{
+        //    Assert(Type<T>.Circularity == Circularity.Maybe);
+        //}
+        static void NotRecursive<T>()
+        {
+            Assert(Type<T>.RecursiveType == RecursiveType.No);
+        }
+        #endregion
+
         static void Main(string[] args)
         {
+            CircularityTests();
             CheckImmutable();
             CheckMutable();
             CheckMaybeMutable();

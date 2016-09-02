@@ -8,16 +8,16 @@ namespace Dynamics
     /// <summary>
     /// Indicates a type structure is cyclic.
     /// </summary>
-    public enum Circularity
+    public enum RecursiveType
     {
         /// <summary>
         /// No cycles in a type's structure.
         /// </summary>
-        Ayclic,
+        No,
 
         /// <summary>
         /// Type structure allows cycles, but depends on runtime parameters.
         /// </summary>
-        Cyclic,
+        Yes,
     }
 }

@@ -34,7 +34,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Circularity.cs" />
+    <Compile Include="RecursiveType.cs" />
     <Compile Include="Kind.cs" />
     <Compile Include="Mutability.cs" />
     <Compile Include="Runtime.cs" />
