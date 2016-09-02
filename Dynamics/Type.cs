@@ -121,16 +121,14 @@ namespace Dynamics
         {
             var x = Expression.Parameter(type, "x");
             var refs = Expression.Parameter(typeof(Dictionary<object, object>), "refs");
-            var copied = Expression.Variable(typeof(object), "copied");
-            var tgv = typeof(Dictionary<object, object>).GetMethod("TryGetValue");
-            //var dc = type.IsValueType ? x as Expression : Expression.If;
+            //var dc = type.IsValueType ? x as Expression : Expression.IfThenElse(Expression.Call(refs, tgv, x, copied), );
             var dc = x as Expression;
             if (type.IsArray)
             {
                 var acopy = new Func<int[], Dictionary<object, object>, int[]>(Runtime.Copy<int>).Method.GetGenericMethodDefinition();
                 dc = Expression.Call(acopy.MakeGenericMethod(type.GetElementType()), x, refs);
             }
-            else //if (type.IsValueType || HasEmptyConstructor(type))
+            else
             {
                 var members = new List<MemberBinding>();
                 var rofields = new Dictionary<string, Expression>();
@@ -150,12 +148,17 @@ namespace Dynamics
                 var newe = rofields.Count == 0 ? Expression.New(type):
                                                  ConstructNew(type, rofields);
                 dc = Expression.MemberInit(newe, members);
+                if (!type.IsValueType)
+                {
+                    var tgv = typeof(Dictionary<object, object>).GetMethod("TryGetValue");
+                    var copied = Expression.Parameter(typeof(object), "copied");
+                    var checkCache = Expression.Condition(
+                            Expression.Call(refs, tgv, x, copied),
+                            Expression.Convert(copied, type),
+                            dc);
+                    dc = Expression.Block(new[] { copied }, checkCache);
+                }
             }
-            //else
-            //{
-            //    var ctors = type.GetConstructors();
-            //    var fields = type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-            //}
             return Expression.Lambda<Func<T, Dictionary<object, object>, T>>(dc, x, refs).Compile();
         }
         static NewExpression ConstructNew(Type type, Dictionary<string, Expression> copies)
