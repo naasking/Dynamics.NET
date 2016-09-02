@@ -100,7 +100,7 @@ namespace Dynamics
         static bool MutableBlacklist(Type type)
         {
             return typeof(Delegate).IsAssignableFrom(type)
-                || HasImpureMethods(type);
+                || type.IsArray;
         }
 
         /// <summary>
@@ -169,10 +169,11 @@ namespace Dynamics
             var x = Expression.Parameter(typeof(T), "x");
             var chkMut = Expression.Constant(true) as Expression;
             var mut = type.IsSealed ? Mutability.Immutable : Mutability.Maybe;
+            var pureMethods = AllPureMethods(type);
             foreach (var field in type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
             {
                 // since this type already has no impure methods, then only public fields should matter
-                if (field.IsPublic && !field.IsInitOnly)
+                if ((field.IsPublic || !pureMethods) && !field.IsInitOnly)
                 {
                     isMutable = null;
                     return Mutability.Mutable;
@@ -229,7 +230,7 @@ namespace Dynamics
             return Type<T0>.IsMutable((T0)value);
         }
 
-        static bool HasImpureMethods(Type type)
+        static bool AllPureMethods(Type type)
         {
             // T is impure if any method is not decorated with [Pure] or is a static method that does not accept a T
             // skip standard methods, ie. GetHashCode, Equals, ToString, CompareTo, get_* and private set_* tagged with [CompilerGenerated], etc.
@@ -246,16 +247,42 @@ namespace Dynamics
                        {
                            var args = x.GetParameters();
                            MethodInfo m;
-                           return x.Name.Equals("GetHashCode") && x.DeclaringType == typeof(object)
-                               || x.Name.Equals("Equals") && (x.DeclaringType == typeof(object) || ieq != null && args.Length == 1 && args[0].ParameterType == type)
-                               || x.Name.Equals("ToString")
-                               || x.Name.Equals("Clone") && icln != null && args.Length == 0
-                               || iconv != null && iconvm.TryGetValue(x.Name, out m) && args.Select(z => z.ParameterType).SequenceEqual(m.GetParameters().Select(z => z.ParameterType))
-                               || x.Name.Equals("CompareTo") && args.Length == 1 && (icompg != null && args[0].ParameterType == type || icomp != null && args[0].ParameterType == typeof(object))
-                               || x.Name.StartsWith("get_") && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length != 0
-                               || x.Name.StartsWith("set_") && x.IsPrivate && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length != 0
+                           // whitelist of standard methods blessed as pure
+                           var pure = false;
+                           switch (x.Name)
+                           {
+                               case "GetHashCode":
+                                   pure = x.IsVirtual && args.Length == 0;
+                                   break;
+                               case "Equals":
+                                   pure = x.IsVirtual && args.Length == 1 && (args[0].ParameterType == typeof(object) || ieq != null && args.Length == 1 && args[0].ParameterType == type)
+                                       || x.IsStatic && x.DeclaringType == typeof(object);
+                                   break;
+                               case "ToString":
+                                   pure = x.IsVirtual && args.Length == 0 && x.ReturnType == typeof(string);
+                                   break;
+                               case "Finalize":
+                                   pure = x.IsVirtual && args.Length == 0 && x.ReturnType == typeof(void);
+                                   break;
+                               case "GetType":
+                                   pure = x.DeclaringType == typeof(object);
+                                   break;
+                               case "MemberwiseClone":
+                                   pure = x.DeclaringType == typeof(object);
+                                   break;
+                               case "Clone":
+                                   pure = icln != null && args.Length == 0 && x.ReturnType == typeof(object);
+                                   break;
+                               case "CompareTo":
+                                   pure = args.Length == 1 && (icompg != null && args[0].ParameterType == type || icomp != null && args[0].ParameterType == typeof(object));
+                                   break;
+                           }
+                           return pure
                                || x.GetCustomAttributes(typeof(PureAttribute), false).Length != 0
-                               || x.IsStatic && !Array.Exists(args, p => p.ParameterType == type); //FIXME: internal fields can bypass mutability analysis
+                               || x.Name.StartsWith("set_") && x.IsPrivate && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length != 0
+                               || x.Name.StartsWith("get_") && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length != 0
+                               || x.IsStatic && !Array.Exists(args, p => p.ParameterType == type)
+                               || iconv != null && iconvm.TryGetValue(x.Name, out m) && args.Select(z => z.ParameterType).SequenceEqual(m.GetParameters().Select(z => z.ParameterType)); //FIXME: internal fields can bypass mutability analysis
                        });
         }
 

@@ -9,6 +9,7 @@ namespace Test
 {
     class Program
     {
+        #region Immutable checks
         struct ROField
         {
             public readonly int X;
@@ -80,13 +81,21 @@ namespace Test
         {
             Debug.Assert(Type<T>.Mutability == Mutability.Immutable);
         }
-        static void Assert(bool cond)
+        #endregion
+        #region Mutable checks
+        static void CheckMutable()
         {
-            Debug.Assert(cond);
+            IsMutable<int[]>();
         }
+        static void IsMutable<T>()
+        {
+            Debug.Assert(Type<T>.Mutability == Mutability.Mutable);
+        }
+        #endregion
         static void Main(string[] args)
         {
             CheckImmutable();
+            CheckMutable();
         }
     }
 }
