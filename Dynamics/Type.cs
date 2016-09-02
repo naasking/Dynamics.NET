@@ -87,7 +87,7 @@ namespace Dynamics
 
         static bool ImmutableWhitelist(Type type)
         {
-            return 0 < type.GetCustomAttributes(typeof(PureAttribute), false).Length
+            return type.Has<PureAttribute>()
                 || type.IsPrimitive
                 || type == typeof(DateTime)
                 || type == typeof(TimeSpan)
@@ -243,6 +243,7 @@ namespace Dynamics
             var iconv = type.GetInterface("IConvertible");
             var iconvm = typeof(IConvertible).GetMethods().ToDictionary(x => x.Name);
             var typeArgs = new[] { type };
+            //FIXME: internal fields can bypass mutability analysis
             return type.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy)
                        .All(x =>
                        {
@@ -282,7 +283,7 @@ namespace Dynamics
                                || x.Has<PureAttribute>()
                                || x.IsPureGetter()
                                || x.IsPureSetter()
-                               || x.IsStatic && !Array.Exists(args, p => p.ParameterType == type) //FIXME: internal fields can bypass mutability analysis
+                               || x.IsStatic && !Array.Exists(args, p => p.ParameterType == type)
                                || iconv != null && iconvm.TryGetValue(x.Name, out m) && args.Select(z => z.ParameterType).SequenceEqual(m.GetParameters().Select(z => z.ParameterType));
                        });
         }
