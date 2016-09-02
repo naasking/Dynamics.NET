@@ -78,11 +78,28 @@ namespace Dynamics
             // Maybe: if any fields have types with Mutability.Maybe
             // Mutable: otherwise
             // Need a list of sanitized core immutable types: Int32, DateTime, decimal, Exception, Attribute, Tuple<*>, etc.
-            Mutability = 0 < type.GetCustomAttributes(typeof(PureAttribute), false).Length ? Mutability.Immutable:
-                         typeof(Delegate).IsAssignableFrom(type) || HasImpureMethods(type) ? Mutability.Mutable:
-                                                                                             TransitiveMutability(type, out isMutable);
+            Mutability = ImmutableWhitelist(type) ? Mutability.Immutable:
+                         MutableBlacklist(type)   ? Mutability.Mutable:
+                                                    TransitiveMutability(type, out isMutable);
             
-            deepCopy = Mutability == Mutability.Immutable ? null : GenerateCopy(type);
+            //deepCopy = Mutability == Mutability.Immutable ? null : GenerateCopy(type);
+        }
+
+        static bool ImmutableWhitelist(Type type)
+        {
+            return 0 < type.GetCustomAttributes(typeof(PureAttribute), false).Length
+                || type.IsPrimitive
+                || type == typeof(DateTime)
+                || type == typeof(TimeSpan)
+                || type == typeof(DateTimeOffset)
+                || type == typeof(decimal)
+                || type == typeof(string)
+                || typeof(Enum).IsAssignableFrom(type);
+        }
+
+        static bool MutableBlacklist(Type type)
+        {
+            return typeof(Delegate).IsAssignableFrom(type) || HasImpureMethods(type);
         }
 
         /// <summary>
@@ -153,7 +170,8 @@ namespace Dynamics
             var mut = type.IsSealed ? Mutability.Immutable : Mutability.Maybe;
             foreach (var field in type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
             {
-                if (!field.IsInitOnly)
+                // since this type already has no impure methods, then only public fields should matter
+                if (field.IsPublic && !field.IsInitOnly)
                 {
                     isMutable = null;
                     return Mutability.Mutable;
