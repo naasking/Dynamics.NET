@@ -36,6 +36,7 @@ namespace Dynamics
         public static bool Subtypes(this Type subtype, Type supertype)
         {
             if (supertype == null) throw new ArgumentNullException("supertype");
+            if (subtype == null) throw new ArgumentNullException("subtype");
             //FUTURE: this only returns true for generic parameter if subtype is exactly a type constraint
             //that appears on supertype. A real subtyping relation would return true if it subtypes all
             //of the constraints.
@@ -142,7 +143,7 @@ namespace Dynamics
         public static bool IsPureSetter(this MethodInfo method)
         {
             return method.IsAutoSetter()
-                && (method.IsPrivate || method.ReflectedType.GetProperty(method.Name.Substring(4)).Has<PureAttribute>());
+                && (method.IsPrivate || method.GetProperty().Has<PureAttribute>());
         }
 
         /// <summary>
@@ -152,8 +153,21 @@ namespace Dynamics
         /// <returns></returns>
         public static bool IsPureGetter(this MethodInfo method)
         {
+            // assume getter is pure if it's auto-generated or it has [Pure] or setter is private/does not exist
             return method.IsAutoGetter()
-                || method.Name.StartsWith("get_") && method.ReflectedType.GetProperty(method.Name.Substring(4)).Has<PureAttribute>();
+                || method.Name.StartsWith("get_") && (method.GetProperty().Has<PureAttribute>() || method.GetProperty().GetSetMethod() == null);
+        }
+
+        /// <summary>
+        /// Extract the property for a get/set method.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public static PropertyInfo GetProperty(this MethodInfo method)
+        {
+            if (!method.Name.StartsWith("get_") && !method.Name.StartsWith("set_"))
+                throw new ArgumentException("Not a getter or setter.", "method");
+            return method.ReflectedType.GetProperty(method.Name.Substring(4));
         }
 
         /// <summary>
