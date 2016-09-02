@@ -53,7 +53,9 @@ namespace Dynamics
         /// <summary>
         /// The cached delegate for <see cref="EqualityComparer{T}.Default.Equals"/>.
         /// </summary>
-        public static readonly Func<T, T, bool> DefaultEquals = EqualityComparer<T>.Default.Equals;
+        public static readonly Func<T, T, bool> DefaultEquals = typeof(T).Subtypes(typeof(IEquatable<T>)) && !typeof(T).IsValueType
+            ? (Func<T, T, bool>)Delegate.CreateDelegate(typeof(Func<T, T, bool>), null, typeof(T).GetMethod("Equals", new[] { typeof(T) }))
+            : EqualityComparer<T>.Default.Equals;
 
         /// <summary>
         /// The cached delegate for <see cref="EqualityComparer{T}.Default.GetHashCode"/>.
@@ -115,7 +117,24 @@ namespace Dynamics
         #region Copy helpers
         internal static T Copy(T value, Dictionary<object, object> refs)
         {
-            return Mutability == Mutability.Immutable ? value : deepCopy(value, refs);
+            if (Mutability == Mutability.Immutable) return value;
+            var type = value?.GetType();
+            if (type == typeof(T)) return deepCopy(value, refs);
+            Func<T, Dictionary<object, object>, T> f;
+            if (!subtypeCopy.TryGetValue(type, out f))
+            {
+                var dispatch = new Func<T, Dictionary<object, object>, T>(DispatchCopy<T>).Method
+                               .GetGenericMethodDefinition()
+                               .MakeGenericMethod(type);
+                f = subtypeCopy[type] = (Func<T, Dictionary<object, object>, T>)Delegate.CreateDelegate(typeof(Func<T, Dictionary<object, object>, T>), dispatch);
+            }
+            return f(value, refs);
+        }
+
+        static T DispatchCopy<T0>(T value, Dictionary<object, object> refs)
+            where T0 : T
+        {
+            return Type<T0>.Copy((T0)value, refs);
         }
 
         static Func<T, Dictionary<object, object>, T> GenerateCopy(Type type)
@@ -216,13 +235,12 @@ namespace Dynamics
                     Func<T, HashSet<object>, bool> f;
                     if (!subtypeMutability.TryGetValue(type, out f))
                     {
-                        var dispatch = new Func<T, HashSet<object>, bool>(DispatchIsMutable<T>).Method.GetGenericMethodDefinition();
-                        f = subtypeMutability[type] = (Func<T, HashSet<object>, bool>)Delegate.CreateDelegate(typeof(Func<T, HashSet<object>, bool>), dispatch.MakeGenericMethod(type));
+                        var dispatch = new Func<T, HashSet<object>, bool>(DispatchIsMutable<T>).Method
+                                       .GetGenericMethodDefinition()
+                                       .MakeGenericMethod(type);
+                        f = subtypeMutability[type] = (Func<T, HashSet<object>, bool>)Delegate.CreateDelegate(typeof(Func<T, HashSet<object>, bool>), dispatch);
                     }
                     return f(value, visited);
-                    //return value is ValueType || visited.Add(value)
-                    //     ? isMutable(value, visited)
-                    //     : false;
                 default:
                     throw new InvalidOperationException("Unknown Mutability value.");
             }
