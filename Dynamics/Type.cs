@@ -65,6 +65,11 @@ namespace Dynamics
         /// </summary>
         static readonly ConcurrentDictionary<Type, Func<T, HashSet<object>, bool>> subtypeMutability = new ConcurrentDictionary<Type, Func<T, HashSet<object>, bool>>();
 
+        /// <summary>
+        /// Used to dispatch to the dynamic type to copy.
+        /// </summary>
+        static readonly ConcurrentDictionary<Type, Func<T, Dictionary<object, object>, T>> subtypeCopy = new ConcurrentDictionary<Type, Func<T, Dictionary<object, object>, T>>();
+
         static Type()
         {
             var type = typeof(T);
@@ -205,9 +210,19 @@ namespace Dynamics
                 case Mutability.Mutable:
                     return true;
                 case Mutability.Maybe:
-                    return value is ValueType || visited.Add(value)
-                         ? isMutable(value, visited)
-                         : false;
+                    var type = value?.GetType();
+                    if (type == typeof(T))
+                        return (value is ValueType || visited.Add(value)) && isMutable(value, visited);
+                    Func<T, HashSet<object>, bool> f;
+                    if (!subtypeMutability.TryGetValue(type, out f))
+                    {
+                        var dispatch = new Func<T, HashSet<object>, bool>(DispatchIsMutable<T>).Method.GetGenericMethodDefinition();
+                        f = subtypeMutability[type] = (Func<T, HashSet<object>, bool>)Delegate.CreateDelegate(typeof(Func<T, HashSet<object>, bool>), dispatch.MakeGenericMethod(type));
+                    }
+                    return f(value, visited);
+                    //return value is ValueType || visited.Add(value)
+                    //     ? isMutable(value, visited)
+                    //     : false;
                 default:
                     throw new InvalidOperationException("Unknown Mutability value.");
             }
@@ -267,37 +282,12 @@ namespace Dynamics
                     }
                 }
             }
-            if (mut == Mutability.Maybe)
-            {
-                if (!type.IsSealed)
-                {
-                    // perform a dynamic type check and dispatch to dynamic type for non-sealed types
-                    var getType = new Func<Type>("".GetType).Method.GetBaseDefinition();
-                    var typeCheck = Expression.Equal(Expression.Call(x, getType), Expression.Constant(type));
-                    var subMut = new Func<T, HashSet<object>, bool>(IsSubtypeMutable).Method;
-                    chkMut = Expression.Condition(typeCheck, chkMut, Expression.Call(subMut, x, visited));
-                }
-                isMutable = Expression.Lambda<Func<T, HashSet<object>, bool>>(chkMut, x, visited).Compile();
-            }
-            else
-            {
-                isMutable = null;
-            }
+            isMutable = mut == Mutability.Maybe
+                      ? Expression.Lambda<Func<T, HashSet<object>, bool>>(chkMut, x, visited).Compile()
+                      : null;
             return mut;
         }
-
-        static bool IsSubtypeMutable(T value, HashSet<object> visited)
-        {
-            Func<T, HashSet<object>, bool> f;
-            var type = value.GetType();
-            if (!subtypeMutability.TryGetValue(type, out f))
-            {
-                var dispatch = new Func<T, HashSet<object>, bool>(DispatchIsMutable<T>).Method.GetGenericMethodDefinition();
-                f = subtypeMutability[type] = (Func<T, HashSet<object>, bool>)Delegate.CreateDelegate(typeof(Func<T, HashSet<object>, bool>), dispatch.MakeGenericMethod(type));
-            }
-            return f(value, visited);
-        }
-
+        
         static bool DispatchIsMutable<T0>(T value, HashSet<object> visited)
             where T0 : T
         {
