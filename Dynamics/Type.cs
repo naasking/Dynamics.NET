@@ -169,7 +169,7 @@ namespace Dynamics
             // non-sealed types may not be immutable, and so generate a residual program to check the dynamic state
             var typeMutable = typeof(Type<>).GetField("Mutability");
             var x = Expression.Parameter(typeof(T), "x");
-            var chkMut = Expression.Constant(true) as Expression;
+            var chkMut = Expression.Constant(false) as Expression;
             var mut = type.IsSealed ? Mutability.Immutable : Mutability.Maybe;
             var pureMethods = AllPureMethods(type);
             foreach (var field in type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
@@ -190,23 +190,23 @@ namespace Dynamics
                             break;
                         case Mutability.Maybe:
                             mut = Mutability.Maybe;
-                            //chkMut = Expression.And(Expression.Call(Expression.Field(x, field), ftype.GetMethod("IsMutable")), chkMut);
+                            var fmut = ftype.GetMethod("IsMutable", BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                            chkMut = Expression.Or(Expression.Call(fmut, Expression.Field(x, field)), chkMut);
                             break;
                     }
                 }
             }
             if (mut == Mutability.Maybe)
             {
-                //if (!type.IsSealed)
-                //{
-                //    // perform a dynamic type check and dispatch to dynamic type for non-sealed types
-                //    var getType = type.GetMethod("GetType", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
-                //    var typeCheck = Expression.Equal(Expression.Call(x, getType), Expression.Constant(type));
-                //    var subMut = type.GetMethod("IsSubtypeMutable", BindingFlags.NonPublic | BindingFlags.Static);
-                //    chkMut = Expression.Condition(typeCheck, chkMut, Expression.Call(subMut, x));
-                //}
-                //isMutable = Expression.Lambda<Func<T, bool>>(chkMut, x).Compile();
-                isMutable = null;
+                if (!type.IsSealed)
+                {
+                    // perform a dynamic type check and dispatch to dynamic type for non-sealed types
+                    var getType = new Func<Type>("".GetType).Method.GetBaseDefinition();
+                    var typeCheck = Expression.Equal(Expression.Call(x, getType), Expression.Constant(type));
+                    var subMut = new Func<T, bool>(IsSubtypeMutable).Method;
+                    chkMut = Expression.Condition(typeCheck, chkMut, Expression.Call(subMut, x));
+                }
+                isMutable = Expression.Lambda<Func<T, bool>>(chkMut, x).Compile();
             }
             else
             {
@@ -215,18 +215,19 @@ namespace Dynamics
             return mut;
         }
 
-        static readonly MethodInfo isMutableInfo = typeof(Type<T>).GetMethod("IsMutable`1");
-
         static bool IsSubtypeMutable(T value)
         {
             Func<T, bool> f;
             var type = value.GetType();
             if (!subtypeMutability.TryGetValue(type, out f))
-                f = subtypeMutability[type] = (Func<T, bool>)Delegate.CreateDelegate(typeof(Func<T, bool>), isMutableInfo.MakeGenericMethod(type));
+            {
+                var dispatch = new Func<T, bool>(DispatchIsMutable<T>).Method.GetGenericMethodDefinition();
+                f = subtypeMutability[type] = (Func<T, bool>)Delegate.CreateDelegate(typeof(Func<T, bool>), dispatch.MakeGenericMethod(type));
+            }
             return f(value);
         }
 
-        static bool IsMutable<T0>(T value)
+        static bool DispatchIsMutable<T0>(T value)
             where T0 : T
         {
             return Type<T0>.IsMutable((T0)value);

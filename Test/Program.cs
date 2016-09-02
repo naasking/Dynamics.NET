@@ -12,6 +12,7 @@ namespace Test
         sealed class TransitiveField<T>
         {
             readonly T field;
+            public TransitiveField(T value) { field = value; }
         }
         sealed class TransitiveProp<T>
         {
@@ -174,11 +175,33 @@ namespace Test
             Debug.Assert(Type<T>.Mutability == Mutability.Maybe);
         }
         #endregion
+        #region Runtime mutability checks
+        class DefMut : MaybeMut
+        {
+            public string Bar { get; set; }
+        }
+        static void RuntimeMutable()
+        {
+            IsImmutable<MaybeMut>(new MaybeMut());
+            IsMutable<MaybeMut>(new DefMut());
+            IsImmutable<TransitiveField<object>>(new TransitiveField<object>("foo"));
+            IsMutable<TransitiveField<object>>(new TransitiveField<object>(new[] { 2, 3 }));
+        }
+        static void IsImmutable<T>(T value)
+        {
+            Debug.Assert(!Type<T>.IsMutable(value));
+        }
+        static void IsMutable<T>(T value)
+        {
+            Debug.Assert(Type<T>.IsMutable(value));
+        }
+        #endregion
         static void Main(string[] args)
         {
             CheckImmutable();
             CheckMutable();
             CheckMaybeMutable();
+            RuntimeMutable();
         }
     }
 }
