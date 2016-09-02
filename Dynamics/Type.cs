@@ -364,17 +364,22 @@ namespace Dynamics
         #region Circularity helpers
         static Cycles DetectCycles(Type type, ref Type[] visited, int length)
         {
-            if (type.HasElementType)
-                return DetectCycles(type.GetElementType(), ref visited, length);
             if (HasParentSubtype(type, visited, length))
                 return Cycles.Yes;
             if (length == visited.Length)
                 Array.Resize(ref visited, visited.Length * 2);
             visited[length] = type;
-            foreach (var x in type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
+            if (type.HasElementType)
             {
-                if (!type.IsPrimitive && Cycles.Yes == DetectCycles(x.FieldType, ref visited, length + 1))
-                    return Cycles.Yes;
+                return DetectCycles(type.GetElementType(), ref visited, length + 1);
+            }
+            else
+            {
+                foreach (var x in type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
+                {
+                    if (!type.IsPrimitive && Cycles.Yes == DetectCycles(x.FieldType, ref visited, length + 1))
+                        return Cycles.Yes;
+                }
             }
             return Cycles.No;
         }
