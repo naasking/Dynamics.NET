@@ -5,7 +5,7 @@ The following features are provided out of the box:
 
  * generic deep copying: Type<T>.Copy(T value)
  * type mutability heuristics: Type<T>.Mutability and Type<T>.IsMutable(value)
- * precise type circularity checks: Type<T>.Circularity
+ * precise type recursion checks: Type<T>.Recursive
  * identifying fields and properties that are compiler-generated
  * finding the compiler-generated fields for auto properties
  * analyzing nested generic types

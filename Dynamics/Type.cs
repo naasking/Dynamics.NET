@@ -35,7 +35,7 @@ namespace Dynamics
         /// <summary>
         /// Exposes whether the type structure allows cycles.
         /// </summary>
-        public static readonly RecursiveType RecursiveType;
+        public static readonly Cycles Cycles;
 
         /// <summary>
         /// Performs a deep copy of any value.
@@ -91,7 +91,7 @@ namespace Dynamics
                                                     TransitiveMutability(type, out isMutable);
 
             var visited = new Type[8];
-            RecursiveType = DetectCycles(type, ref visited, 0);
+            Cycles = DetectCycles(type, ref visited, 0);
             
             deepCopy = Mutability == Mutability.Immutable ? null : GenerateCopy(type);
         }
@@ -101,6 +101,10 @@ namespace Dynamics
         /// </summary>
         /// <param name="value">The value to copy.</param>
         /// <returns>A deep copy of the value.</returns>
+        /// <remarks>
+        /// Copying doesn't quite work in the presence of child->parent references. These will
+        /// probably loop infinitely.
+        /// </remarks>
         public static T Copy(T value)
         {
             return Mutability == Mutability.Immutable ? value : Copy(value, new Dictionary<object, object>());
@@ -122,16 +126,24 @@ namespace Dynamics
         {
             if (Mutability == Mutability.Immutable) return value;
             var type = value?.GetType();
-            if (type == typeof(T)) return deepCopy(value, refs);
-            Func<T, Dictionary<object, object>, T> f;
-            if (!subtypeCopy.TryGetValue(type, out f))
+            if (type == typeof(T))
             {
-                var dispatch = new Func<T, Dictionary<object, object>, T>(DispatchCopy<T>).Method
-                               .GetGenericMethodDefinition()
-                               .MakeGenericMethod(type);
-                f = subtypeCopy[type] = (Func<T, Dictionary<object, object>, T>)Delegate.CreateDelegate(typeof(Func<T, Dictionary<object, object>, T>), dispatch);
+                var copy = deepCopy(value, refs);
+                if (!(value is ValueType)) refs[value] = copy; //FIXME: need to move this into deepCopy
+                return copy;
             }
-            return f(value, refs);
+            else
+            {
+                Func<T, Dictionary<object, object>, T> f;
+                if (!subtypeCopy.TryGetValue(type, out f))
+                {
+                    var dispatch = new Func<T, Dictionary<object, object>, T>(DispatchCopy<T>).Method
+                                   .GetGenericMethodDefinition()
+                                   .MakeGenericMethod(type);
+                    f = subtypeCopy[type] = (Func<T, Dictionary<object, object>, T>)Delegate.CreateDelegate(typeof(Func<T, Dictionary<object, object>, T>), dispatch);
+                }
+                return f(value, refs);
+            }
         }
 
         static T DispatchCopy<T0>(T value, Dictionary<object, object> refs)
@@ -167,11 +179,14 @@ namespace Dynamics
                     else
                         members.Add(Expression.Bind(field, ecopy));
                 }
+                //FIXME: this doesn't quite work. Need to add new obj to 'refs' before
+                //binding members/building children in case of child->parent reference.
                 var newe = rofields.Count == 0 ? Expression.New(type):
                                                  ConstructNew(type, rofields);
                 dc = Expression.MemberInit(newe, members);
                 if (!type.IsValueType)
                 {
+                    //FIXME: need to add new object to refs if it's not a value type
                     var tgv = typeof(Dictionary<object, object>).GetMethod("TryGetValue");
                     var copied = Expression.Parameter(typeof(object), "copied");
                     var checkCache = Expression.Condition(
@@ -224,8 +239,8 @@ namespace Dynamics
         #region Mutability helpers
         static bool IsMutable(T value, HashSet<object> visited)
         {
-            //FIXME: this actually needs a private overload that accepts a HashSet<object> to ensure we don't visit
-            //a node more than once.
+            //FIXME: can we exploit cycle detection to avoid adding to 'visited'? This
+            //may create duplicate work in DAGs by possibly traversing same node twice.
             switch (Mutability)
             {
                 case Mutability.Immutable:
@@ -347,19 +362,19 @@ namespace Dynamics
         #endregion
 
         #region Circularity helpers
-        static RecursiveType DetectCycles(Type type, ref Type[] visited, int length)
+        static Cycles DetectCycles(Type type, ref Type[] visited, int length)
         {
             if (HasParentSubtype(type, visited, length))
-                return RecursiveType.Yes;
+                return Cycles.Yes;
             if (length == visited.Length)
                 Array.Resize(ref visited, visited.Length * 2);
             visited[length] = type;
             foreach (var x in type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
             {
-                if (!type.IsPrimitive && RecursiveType.Yes == DetectCycles(x.FieldType, ref visited, length + 1))
-                    return RecursiveType.Yes;
+                if (!type.IsPrimitive && Cycles.Yes == DetectCycles(x.FieldType, ref visited, length + 1))
+                    return Cycles.Yes;
             }
-            return RecursiveType.No;
+            return Cycles.No;
         }
         internal static bool HasParentSubtype(Type type, Type[] array, int length)
         {

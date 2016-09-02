@@ -6,9 +6,9 @@ using System.Text;
 namespace Dynamics
 {
     /// <summary>
-    /// Indicates a type structure is cyclic.
+    /// Indicates whether a type's structure permits cycles.
     /// </summary>
-    public enum RecursiveType
+    public enum Cycles
     {
         /// <summary>
         /// No cycles in a type's structure.

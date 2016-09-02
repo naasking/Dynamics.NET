@@ -261,7 +261,7 @@ namespace Test
         }
         static void IsRecursive<T>()
         {
-            Assert(Type<T>.RecursiveType == RecursiveType.Yes);
+            Assert(Type<T>.Cycles == Cycles.Yes);
         }
         //static void MaybeCircular<T>()
         //{
@@ -269,7 +269,7 @@ namespace Test
         //}
         static void NotRecursive<T>()
         {
-            Assert(Type<T>.RecursiveType == RecursiveType.No);
+            Assert(Type<T>.Cycles == Cycles.No);
         }
         #endregion
 
