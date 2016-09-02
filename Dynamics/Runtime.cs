@@ -153,7 +153,7 @@ namespace Dynamics
         public static bool IsPureGetter(this MethodInfo method)
         {
             return method.IsAutoGetter()
-                || method.Name.StartsWith("set_") && method.ReflectedType.GetProperty(method.Name.Substring(4)).Has<PureAttribute>();
+                || method.Name.StartsWith("get_") && method.ReflectedType.GetProperty(method.Name.Substring(4)).Has<PureAttribute>();
         }
 
         /// <summary>
