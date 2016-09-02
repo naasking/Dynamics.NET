@@ -213,12 +213,40 @@ namespace Test
             Debug.Assert(Type<T>.IsMutable(value));
         }
         #endregion
+
+        #region Deep Copy tests
+        sealed class EquatableSeq<T> : IEquatable<EquatableSeq<T>>
+        {
+            public EquatableSeq(params T[] x) { X = x; }
+            public T[] X { get; private set; }
+            public bool Equals(EquatableSeq<T> obj)
+            {
+                //return X.SequenceEqual(obj.X);
+                return X.Zip(obj.X, (x, y) => Type<T>.DefaultEquals(x, y)).All(x => x);
+            }
+        }
+        static void CopyTests()
+        {
+            IsCopied(0);
+            IsCopied("foo");
+            IsCopied(new DefMut { Bar = "Hello World" });
+            IsCopied(new EquatableSeq<int>(2, 3));
+        }
+        static void IsCopied<T>(T orig)
+        {
+            var copy = Type<T>.Copy(orig);
+            Debug.Assert(!ReferenceEquals(orig, copy));
+            Debug.Assert(Type<T>.DefaultEquals(orig, copy));
+        }
+        #endregion
+
         static void Main(string[] args)
         {
             CheckImmutable();
             CheckMutable();
             CheckMaybeMutable();
             RuntimeMutable();
+            CopyTests();
         }
     }
 }
