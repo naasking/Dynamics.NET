@@ -196,16 +196,15 @@ namespace Dynamics
             }
             if (mut == Mutability.Maybe)
             {
-                //if (!type.IsSealed)
-                //{
-                //    // perform a dynamic type check and dispatch to dynamic type for non-sealed types
-                //    var getType = type.GetMethod("GetType", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
-                //    var typeCheck = Expression.Equal(Expression.Call(x, getType), Expression.Constant(type));
-                //    var subMut = type.GetMethod("IsSubtypeMutable", BindingFlags.NonPublic | BindingFlags.Static);
-                //    chkMut = Expression.Condition(typeCheck, chkMut, Expression.Call(subMut, x));
-                //}
-                //isMutable = Expression.Lambda<Func<T, bool>>(chkMut, x).Compile();
-                isMutable = null;
+                if (!type.IsSealed)
+                {
+                    // perform a dynamic type check and dispatch to dynamic type for non-sealed types
+                    var getType = type.GetMethod("GetType", BindingFlags.Instance | BindingFlags.Public | BindingFlags.FlattenHierarchy);
+                    var typeCheck = Expression.Equal(Expression.Call(x, getType), Expression.Constant(type));
+                    var subMut = type.GetMethod("IsSubtypeMutable", BindingFlags.NonPublic | BindingFlags.Static);
+                    chkMut = Expression.Condition(typeCheck, chkMut, Expression.Call(subMut, x));
+                }
+                isMutable = Expression.Lambda<Func<T, bool>>(chkMut, x).Compile();
             }
             else
             {
@@ -240,7 +239,14 @@ namespace Dynamics
             {
                 typeof(IFormattable), typeof(IConvertible), typeof(ICloneable), typeof(IComparable),
                 Kind.Definition.Apply(typeof(IComparable<>), type), Kind.Definition.Apply(typeof(IEquatable<>), type),
-                typeof(object), typeof(ValueType)
+                typeof(IFormatProvider), typeof(ICustomFormatter), typeof(ICustomAttributeProvider),
+                Kind.Definition.Apply(typeof(IComparer<>), type), 
+                //Kind.Definition.Apply(typeof(IGrouping<>), type), Kind.Definition.Apply(typeof(ILookup<>), type),
+                Kind.Definition.Apply(typeof(IOrderedQueryable<>), type), typeof(IOrderedQueryable),
+                Kind.Definition.Apply(typeof(IOrderedEnumerable<>), type),
+                Kind.Definition.Apply(typeof(IQueryable<>), type), typeof(IQueryable),
+                typeof(IReflect), typeof(ISafeSerializationData), typeof(IServiceProvider),
+                typeof(ISurrogateSelector), typeof(object), typeof(ValueType)
             }
             .Where(x => type.Subtypes(x));
             var methods = types.SelectMany(x => x.IsInterface ? type.GetInterfaceMap(x).TargetMethods : x.GetMethods(mflags))
