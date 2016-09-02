@@ -51,6 +51,19 @@ namespace Test
             }
         }
 
+        // trust the purity declaration
+        [System.Diagnostics.Contracts.Pure]
+        sealed class PureType
+        {
+            public int X { get; set; }
+        }
+        sealed class PureProp
+        {
+            // trust the purity declaration
+            [System.Diagnostics.Contracts.Pure]
+            public int X { get; set; }
+        }
+
         static void CheckImmutable()
         {
             IsImmutable<int>();
@@ -76,6 +89,8 @@ namespace Test
             IsImmutable<ROProperty>();
             IsImmutable<EqualsOverride>();
             IsImmutable<Equatable>();
+            IsImmutable<PureType>();
+            IsImmutable<PureProp>();
         }
         static void IsImmutable<T>()
         {
@@ -83,9 +98,36 @@ namespace Test
         }
         #endregion
         #region Mutable checks
+        struct MutField
+        {
+            public int X;
+        }
+        struct MutProperty
+        {
+            public int X { get; set; }
+        }
+        struct ImpureMethod
+        {
+            public int X { get; private set; }
+            public void Foo()
+            {
+            }
+        }
+        struct PureImpureMethod
+        {
+            [System.Diagnostics.Contracts.Pure]
+            public int X { get; set; }
+            public void Foo()
+            {
+            }
+        }
         static void CheckMutable()
         {
             IsMutable<int[]>();
+            IsMutable<MutField>();
+            IsMutable<MutProperty>();
+            IsMutable<ImpureMethod>();
+            IsMutable<PureImpureMethod>();
         }
         static void IsMutable<T>()
         {

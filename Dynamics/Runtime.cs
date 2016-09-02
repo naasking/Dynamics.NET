@@ -2,9 +2,10 @@
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Collections.Generic;
-using COMP = System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using System.Linq;
 using System.Text;
+using System.Diagnostics.Contracts;
 
 namespace Dynamics
 {
@@ -80,7 +81,63 @@ namespace Dynamics
                         ?? property.GetSetMethod()
                         ?? property.DeclaringType.GetMethod("get_" + property.Name, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
                         ?? property.DeclaringType.GetMethod("set_" + property.Name, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
-            return accessor.IsDefined(typeof(COMP.CompilerGeneratedAttribute), false);
+            return accessor.IsDefined(typeof(CompilerGeneratedAttribute), false);
+        }
+        
+        /// <summary>
+        /// Identifies auto-generated getters.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public static bool IsAutoGetter(this MethodInfo method)
+        {
+            return method.Name.StartsWith("get_")
+                && method.Has<CompilerGeneratedAttribute>();
+        }
+
+        /// <summary>
+        /// Identifies auto-generated getters.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public static bool IsAutoSetter(this MethodInfo method)
+        {
+            return method.Name.StartsWith("set_")
+                && method.Has<CompilerGeneratedAttribute>();
+        }
+
+        /// <summary>
+        /// Identifies pure setters.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public static bool IsPureSetter(this MethodInfo method)
+        {
+            return method.IsAutoSetter()
+                && (method.IsPrivate || method.ReflectedType.GetProperty(method.Name.Substring(4)).Has<PureAttribute>());
+        }
+
+        /// <summary>
+        /// Identifies pure setters.
+        /// </summary>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public static bool IsPureGetter(this MethodInfo method)
+        {
+            return method.IsAutoGetter()
+                || method.Name.StartsWith("set_") && method.ReflectedType.GetProperty(method.Name.Substring(4)).Has<PureAttribute>();
+        }
+
+        /// <summary>
+        /// Checks whether the given member has a particular attribute.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="member"></param>
+        /// <returns></returns>
+        public static bool Has<T>(this ICustomAttributeProvider x)
+            where T : Attribute
+        {
+            return x.GetCustomAttributes(typeof(T), false).Length != 0;
         }
 
         /// <summary>

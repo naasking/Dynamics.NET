@@ -94,6 +94,7 @@ namespace Dynamics
                 || type == typeof(DateTimeOffset)
                 || type == typeof(decimal)
                 || type == typeof(string)
+                || type == typeof(System.Linq.Expressions.Expression)
                 || typeof(Enum).IsAssignableFrom(type);
         }
 
@@ -173,7 +174,7 @@ namespace Dynamics
             foreach (var field in type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
             {
                 // since this type already has no impure methods, then only public fields should matter
-                if ((field.IsPublic || !pureMethods) && !field.IsInitOnly)
+                if (!field.IsInitOnly && (field.IsPublic || !pureMethods))
                 {
                     isMutable = null;
                     return Mutability.Mutable;
@@ -278,11 +279,11 @@ namespace Dynamics
                                    break;
                            }
                            return pure
-                               || x.GetCustomAttributes(typeof(PureAttribute), false).Length != 0
-                               || x.Name.StartsWith("set_") && x.IsPrivate && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length != 0
-                               || x.Name.StartsWith("get_") && x.GetCustomAttributes(typeof(CompilerGeneratedAttribute), true).Length != 0
-                               || x.IsStatic && !Array.Exists(args, p => p.ParameterType == type)
-                               || iconv != null && iconvm.TryGetValue(x.Name, out m) && args.Select(z => z.ParameterType).SequenceEqual(m.GetParameters().Select(z => z.ParameterType)); //FIXME: internal fields can bypass mutability analysis
+                               || x.Has<PureAttribute>()
+                               || x.IsPureGetter()
+                               || x.IsPureSetter()
+                               || x.IsStatic && !Array.Exists(args, p => p.ParameterType == type) //FIXME: internal fields can bypass mutability analysis
+                               || iconv != null && iconvm.TryGetValue(x.Name, out m) && args.Select(z => z.ParameterType).SequenceEqual(m.GetParameters().Select(z => z.ParameterType));
                        });
         }
 
