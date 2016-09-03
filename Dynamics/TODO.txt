@@ -31,11 +31,12 @@ by the interface that matches them.
 Match<T>.Case is a statically cached delegate that dispatches
 right into the interface. This eliminates double dispatch
 overhead so it would be even faster than the regular visitor
-pattern.
+pattern (except for generic methods because open instance
+delegates don't work for this case).
 
 First version will probably only support single dispatch, but
-Sasa branch implementation supports multi-argument dispatch in
-theory, with Match<T>.Case, .Case2, .Case3, etc.
+Sasa branch supports multi-argument dispatch in theory, with
+Match<T>.Case, .Case2, .Case3, etc.
 
 [1] http://lambda-the-ultimate.org/node/5322
 [2] http://higherlogics.blogspot.ca/2012/02/reusable-ad-hoc-extensions-for-net.html
