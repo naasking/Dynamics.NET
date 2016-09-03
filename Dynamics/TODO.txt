@@ -30,7 +30,7 @@ by the interface that matches on them:
   }
   Match<ISomeVisitor, T>.Case(visitor, value);
 
-Match<T>.Case is a statically cached delegate that dispatches
+Match<TVisit, T>.Case is a statically cached delegate that dispatches
 right into the interface's most specific match for type T. This
 often eliminates double dispatch overhead so it would be even
 faster than the regular visitor pattern.
