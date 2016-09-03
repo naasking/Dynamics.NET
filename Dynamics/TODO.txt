@@ -32,9 +32,7 @@ by the interface that matches on them:
 Match<T>.Case is a statically cached delegate that dispatches
 right into the interface's most specific match. This
 eliminates double dispatch overhead so it would be even
-faster than the regular visitor pattern, except for generic
-methods because open instance delegates don't work for this
-case (this still requires double-dispatch).
+faster than the regular visitor pattern.
 
 First version will probably only support single dispatch, but
 Sasa branch supports multi-argument dispatch in theory, with
