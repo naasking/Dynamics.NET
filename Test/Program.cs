@@ -219,17 +219,23 @@ namespace Test
         #endregion
 
         #region Deep Copy tests
-        sealed class Recurse : IEquatable<Recurse>
+        sealed class Recurse
         {
             public Recurse self;
-            public bool Equals(Recurse other)
-            {
-                return other.self == other;
-            }
             public static Recurse Cycle()
             {
                 var x = new Recurse();
                 x.self = x;
+                return x;
+            }
+        }
+        sealed class Copiable : ICopiable<Copiable>
+        {
+            public bool done;
+            public Copiable Copy(Dictionary<object, object> refs)
+            {
+                var x = new Copiable { done = true };
+                refs.Add(this, x);
                 return x;
             }
         }
@@ -249,7 +255,8 @@ namespace Test
             IsShared("foo");
             IsCopied(new DefMut { Bar = "Hello World" }, (x, y) => x.Bar == y.Bar);
             IsCopied(new EquatableSeq<int>(2, 3));
-            IsCopied(Recurse.Cycle());
+            IsCopied(Recurse.Cycle(), (orig, other) => other.self == other);
+            IsCopied(new Copiable(), (orig, copy) => copy.done);
         }
         static void IsShared<T>(T orig)
         {

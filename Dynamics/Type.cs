@@ -154,6 +154,13 @@ namespace Dynamics
 
         static Func<T, Dictionary<object, object>, T> GenerateCopy(Type type)
         {
+            if (!type.IsValueType) {
+                var icopy = typeof(ICopiable<>).MakeGenericType(type);
+                if (type.Subtypes(icopy))
+                    return (Func<T, Dictionary<object, object>, T>)Delegate.CreateDelegate(
+                        typeof(Func<T, Dictionary<object, object>, T>), null,
+                        icopy.GetMethod("Copy"));
+            }
             var x = Expression.Parameter(type, "x");
             var refs = Expression.Parameter(typeof(Dictionary<object, object>), "refs");
             var dc = x as Expression;
@@ -199,26 +206,29 @@ namespace Dynamics
             if (copies.Count == 0) return Expression.New(type);
             var ctors = type.GetConstructors();
             ConstructorInfo ctor = null;
-            var bindings = new List<Expression>();
+            var bindings = new List<Expression>();  // constructor parameter bindings
+            var used = new HashSet<string>();       // tracks used members from 'copies'
             foreach (var x in ctors)
             {
                 ctor = x;
                 var args = x.GetParameters();
                 if (args.Length != copies.Count)
                     continue;
+                bindings.Clear();
+                used.Clear();
                 foreach (var p in args)
                 {
-                    // find the field whose name matches the constructor parameter, else find one matching the type
+                    // find field name matching the parameter name, else find one matching the type
                     Expression e;
-                    if (!copies.TryGetValue(p.Name.ToLower(), out e))
+                    var name = p.Name.ToLower();
+                    if (!copies.TryGetValue(name, out e))
                     {
-                        var member = copies.First(z => z.Value.Type == p.ParameterType);
-                        e = member.Value;
-                        copies.Remove(member.Key);
+                        e = copies.First(z => z.Value.Type == p.ParameterType && !used.Contains(z.Key)).Value;
+                        used.Add(name); // ensure same member isn't used twice
                     }
                     bindings.Add(e);
                 }
-                if (copies.Count > 0)
+                if (copies.Count != bindings.Count)
                     throw new InvalidOperationException("Couldn't find appropriate constructor.");
             }
             return Expression.New(ctor, bindings);
