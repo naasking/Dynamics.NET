@@ -22,11 +22,11 @@ by the interface that matches on them:
 
   interface ISomeVisitor
   {
-    void IntCase(int i);		// match int
-    void StringCase(string s);	// match strings
-    void Constrained<T>(T someClass) // match any class not matched elsewhere
-		where T : class;
-    void Default<T>(T x);			 // match everything else
+    void IntCase(int i);       // match int
+    void StringCase(string s); // match strings
+    void Refs<T>(T someClass)  // match any reference type
+        where T : class;
+    void Any<T>(T x);          // match everything else
   }
   Match<ISomeVisitor, T>.Case(visitor, value);
 
