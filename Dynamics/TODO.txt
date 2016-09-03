@@ -23,7 +23,7 @@ by the interface that matches on them:
   interface ISomeVisitor
   {
     void IntCase(int i);		// match int
-	void StringCase(string s);	// match strings
+    void StringCase(string s);	// match strings
     void Constrained<T>(T someClass) // match any class not matched elsewhere
 		where T : class;
     void Default<T>(T x);			 // match everything else
