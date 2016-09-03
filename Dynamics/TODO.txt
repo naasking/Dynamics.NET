@@ -23,8 +23,8 @@ by the interface that matches them.
   interface ISomeVisitor
   {
     void IntCase(int i);
-	void Constrained<T>() where T : class;
-	void Default<T>(T x);
+    void Constrained<T>() where T : class;
+    void Default<T>(T x);
   }
   Match<ISomeVisitor>.Case(visitor, value);
 
