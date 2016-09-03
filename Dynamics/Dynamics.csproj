@@ -35,6 +35,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Cycles.cs" />
+    <Compile Include="ICopiable.cs" />
     <Compile Include="Kind.cs" />
     <Compile Include="Mutability.cs" />
     <Compile Include="Runtime.cs" />

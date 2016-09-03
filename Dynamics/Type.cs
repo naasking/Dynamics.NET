@@ -101,10 +101,6 @@ namespace Dynamics
         /// </summary>
         /// <param name="value">The value to copy.</param>
         /// <returns>A deep copy of the value.</returns>
-        /// <remarks>
-        /// Copying doesn't quite work in the presence of child->parent references. These will
-        /// probably loop infinitely.
-        /// </remarks>
         public static T Copy(T value)
         {
             return Mutability == Mutability.Immutable ? value : Copy(value, new Dictionary<object, object>());
@@ -124,15 +120,11 @@ namespace Dynamics
         #region Copy helpers
         internal static T Copy(T value, Dictionary<object, object> refs)
         {
-            if (Mutability == Mutability.Immutable) return value;
+            if (Mutability == Mutability.Immutable || value == null)
+                return value;
             var type = value?.GetType();
-            if (type == typeof(T))
-            {
-                var copy = deepCopy(value, refs);
-                if (!(value is ValueType)) refs[value] = copy; //FIXME: need to move this into deepCopy
-                return copy;
-            }
-            else
+            object x;
+            if (type != typeof(T))
             {
                 Func<T, Dictionary<object, object>, T> f;
                 if (!subtypeCopy.TryGetValue(type, out f))
@@ -143,6 +135,14 @@ namespace Dynamics
                     f = subtypeCopy[type] = (Func<T, Dictionary<object, object>, T>)Delegate.CreateDelegate(typeof(Func<T, Dictionary<object, object>, T>), dispatch);
                 }
                 return f(value, refs);
+            }
+            else if (refs.TryGetValue(value, out x))
+            {
+                return (T)x;
+            }
+            else
+            {
+                return deepCopy(value, refs);
             }
         }
 
@@ -164,7 +164,8 @@ namespace Dynamics
             }
             else
             {
-                var members = new List<MemberBinding>();
+                var y = Expression.Variable(type, "y");
+                var members = new List<Expression>();
                 var rofields = new Dictionary<string, Expression>();
                 var noEmptyCtor = !type.IsValueType && !HasEmptyConstructor(type);
                 foreach (var field in type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance))
@@ -177,30 +178,25 @@ namespace Dynamics
                     if (field.IsInitOnly || noEmptyCtor)
                         rofields.Add(field.FieldName().ToLower(), ecopy);
                     else
-                        members.Add(Expression.Bind(field, ecopy));
+                        members.Add(Expression.Assign(Expression.Field(y, field), ecopy));
                 }
-                //FIXME: this doesn't quite work. Need to add new obj to 'refs' before
-                //binding members/building children in case of child->parent reference.
-                var newe = rofields.Count == 0 ? Expression.New(type):
-                                                 ConstructNew(type, rofields);
-                dc = Expression.MemberInit(newe, members);
+                // need to add new obj to 'refs' before copying children in case of child->parent reference.
                 if (!type.IsValueType)
                 {
-                    //FIXME: need to add new object to refs if it's not a value type
-                    var tgv = typeof(Dictionary<object, object>).GetMethod("TryGetValue");
-                    var copied = Expression.Parameter(typeof(object), "copied");
-                    var checkCache = Expression.Condition(
-                            Expression.Call(refs, tgv, x, copied),
-                            Expression.Convert(copied, type),
-                            dc);
-                    dc = Expression.Block(new[] { copied }, checkCache);
+                    // add 'copy' to 'refs' so children can see it
+                    var tgv = typeof(Dictionary<object, object>).GetMethod("Add", new[] { typeof(object), typeof(object) });
+                    members.Insert(0, Expression.Call(refs, tgv, x, y));
                 }
+                members.Insert(0, Expression.Assign(y, ConstructNew(type, rofields)));
+                members.Add(y);
+                dc = Expression.Block(new[] { y }, members);
             }
             return Expression.Lambda<Func<T, Dictionary<object, object>, T>>(dc, x, refs).Compile();
         }
 
         static NewExpression ConstructNew(Type type, Dictionary<string, Expression> copies)
         {
+            if (copies.Count == 0) return Expression.New(type);
             var ctors = type.GetConstructors();
             ConstructorInfo ctor = null;
             var bindings = new List<Expression>();
@@ -215,11 +211,16 @@ namespace Dynamics
                     // find the field whose name matches the constructor parameter, else find one matching the type
                     Expression e;
                     if (!copies.TryGetValue(p.Name.ToLower(), out e))
-                        e = copies.Values.First(z => z.Type == p.ParameterType);
+                    {
+                        var member = copies.First(z => z.Value.Type == p.ParameterType);
+                        e = member.Value;
+                        copies.Remove(member.Key);
+                    }
                     bindings.Add(e);
                 }
+                if (copies.Count > 0)
+                    throw new InvalidOperationException("Couldn't find appropriate constructor.");
             }
-            //return ctor == null ? Expression.New(type) : Expression.New(ctor, bindings);
             return Expression.New(ctor, bindings);
         }
         #endregion
