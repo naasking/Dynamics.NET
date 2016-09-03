@@ -13,7 +13,7 @@
 An old Sasa branch has a generic dispatch/visitor using the method
 resolution logic from the Fortress paper, "Type Checking Modular
 Multiple Dispatch with Parametric Polymorphism and Multiple
-Inheritance".
+Inheritance" [1].
 
 The idea is to free the need for visitors to be defined up front,
 thus enabling more ad-hoc extension. For instance, sets of
@@ -22,16 +22,17 @@ by the interface that matches on them:
 
   interface ISomeVisitor
   {
-    void IntCase(int i);
-	void StringCase(string s);
-    void Constrained<T>(T someClass) where T : class;
-    void Default<T>(T x);
+    void IntCase(int i);		// match int
+	void StringCase(string s);	// match strings
+    void Constrained<T>(T someClass) // match any class not matched elsewhere
+		where T : class;
+    void Default<T>(T x);			 // match everything else
   }
-  Match<ISomeVisitor>.Case(visitor, value);
+  Match<ISomeVisitor, T>.Case(visitor, value);
 
 Match<T>.Case is a statically cached delegate that dispatches
-right into the interface's most specific match. This
-eliminates double dispatch overhead so it would be even
+right into the interface's most specific match for type T. This
+often eliminates double dispatch overhead so it would be even
 faster than the regular visitor pattern.
 
 First version will probably only support single dispatch, but
