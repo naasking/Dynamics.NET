@@ -1,7 +1,41 @@
 ﻿= Dynamics.NET =
 
-= v1.0 =
+== v1.0 ==
 
  * add PIC from Sasa or some simpler variant if possible
- * complete deep copy with sharing
- * add tests
+ * add more tests, particular deeply circular copies
+ * add more types/methods to mutability whitelist
+
+= Future Work =
+
+== Generic Visitor ==
+
+An old Sasa branch has a generic dispatch/visitor using the method
+resolution logic from the Fortress paper, "Type Checking Modular
+Multiple Dispatch with Parametric Polymorphism and Multiple
+Inheritance".
+
+The idea is to break the need for visitors to be defined up front
+with types, thus enabling more ad-hoc extension. For instance,
+sets of unrelated types would have an equivalence class defined
+by the interface that matches them.
+
+  interface ISomeVisitor
+  {
+    void IntCase(int i);
+	void Constrained<T>() where T : class;
+	void Default<T>(T x);
+  }
+  Match<ISomeVisitor>.Case(visitor, value);
+
+Match<T>.Case is a statically cached delegate that dispatches
+right into the interface. This eliminates double dispatch
+overhead so it would be even faster than the regular visitor
+pattern.
+
+First version will probably only support single dispatch, but
+Sasa branch implementation supports multi-argument dispatch in
+theory, with Match<T>.Case, .Case2, .Case3, etc.
+
+[1] http://lambda-the-ultimate.org/node/5322
+[2] http://higherlogics.blogspot.ca/2012/02/reusable-ad-hoc-extensions-for-net.html
