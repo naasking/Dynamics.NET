@@ -77,7 +77,8 @@ namespace Dynamics
             var type = typeof(T);
             // initialize the default constructor: if T:new(), then invoke the parameterless constructor
             // else if it's an array or struct, then simply return default(T)
-            Create = type.IsArray || type.IsValueType ? DefaultCtor:
+            Create = type.Subtypes(typeof(MemberInfo))? null:
+                     type.IsArray || type.IsValueType ? DefaultCtor:
                      type == typeof(string)           ? Expression.Lambda<Func<T>>(Expression.Constant(string.Empty)).Compile():
                      HasEmptyConstructor(type)        ? Expression.Lambda<Func<T>>(Expression.New(typeof(T))).Compile():
                                                         () => (T)FormatterServices.GetUninitializedObject(type);
@@ -180,11 +181,19 @@ namespace Dynamics
                     return icopy.GetMethod("Copy").Create<Func<T, Dictionary<object, object>, T>>();
             }
             // if type has a method in Copying static class, then dispatch to that
-            var match = typeof(Copying).GetMethod(type.IsArray ? "Array" : type.Name);
+            var matchName = type.IsArray              ? "Array":
+                            type.Subtypes<Delegate>() ? "Delegate":
+                                                        type.Name;
+            var match = typeof(Copying).GetMethod(matchName);
             if (match != null)
             {
                 if (match.IsGenericMethod)
-                    match = match.MakeGenericMethod(type.IsArray ? new[] { type.GetElementType() } : type.GetGenericArguments());
+                {
+                    var args = type.IsArray              ? new[] { type.GetElementType() }:
+                               type.Subtypes<Delegate>() ? new[] { type }:
+                                                           type.GetGenericArguments();
+                    match = match.MakeGenericMethod(args);
+                }
                 return match.Create<Func<T, Dictionary<object, object>, T>>();
             }
             // if we get here, we need to dynamically generate a deepCopy method
@@ -223,7 +232,8 @@ namespace Dynamics
 
         static NewExpression ConstructNew(Type type, Dictionary<string, Expression> copies)
         {
-            if (copies.Count == 0) return Expression.New(type);
+            if (copies.Count == 0)
+                return Expression.New(type);
             var ctors = type.GetConstructors();
             ConstructorInfo ctor = null;
             var bindings = new List<Expression>();  // constructor parameter bindings
@@ -306,7 +316,8 @@ namespace Dynamics
                 || type == typeof(decimal)
                 || type == typeof(string)
                 || type == typeof(System.Linq.Expressions.Expression)
-                || type.Subtypes(typeof(Enum));
+                || type.Subtypes(typeof(Enum))
+                || type.Subtypes(typeof(MemberInfo));
         }
 
         static bool MutableBlacklist(Type type)

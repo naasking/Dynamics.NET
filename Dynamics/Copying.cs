@@ -6,6 +6,15 @@ using System.Text;
 
 namespace Dynamics
 {
+    /// <summary>
+    /// Optimized copy implementations for some basic BCL types. This saves
+    /// some initialization time and uses less memory than dynamically generated
+    /// methods that do the same job.
+    /// 
+    /// We don't provide implementations for dictionary or set types because there's
+    /// no way to know what IComparer or IEqualityComparer instances were used, so
+    /// the ordinary internal reflection logic handles that.
+    /// </summary>
     internal static class Copying
     {
         public static T[] Array<T>(T[] source, Dictionary<object, object> refs)
@@ -37,28 +46,7 @@ namespace Dynamics
         {
             return EnumerableBase<ArrayList>(source, new ArrayList(source.Count), refs);
         }
-
-        //FIXME: current copy implementation does not reproduce any internal IComparer or IEqualityComparer instances
-        //so the ordering and hashing of new dictionary won't match. Perhaps should let those be auto-copied
-        //public static TEnum DictionaryBase<TEnum>(IEnumerable source, TEnum copy, Dictionary<object, object> refs)
-        //    where TEnum : IDictionary
-        //{
-        //    refs.Add(source, copy);
-        //    foreach (DictionaryEntry x in source)
-        //        copy.Add(Type<object>.Copy(x.Key, refs), Type<object>.Copy(x.Value, refs));
-        //    return copy;
-        //}
-
-        //public static SortedList SortedList(SortedList source, Dictionary<object, object> refs)
-        //{
-        //    return DictionaryBase<SortedList>(source, new SortedList(source.Count), refs);
-        //}
-
-        //public static Hashtable Hashtable(Hashtable source, Dictionary<object, object> refs)
-        //{
-        //    return DictionaryBase<Hashtable>(source, new Hashtable(source.Count), refs);
-        //}
-
+        
         public static TEnum EnumerableBase<T, TEnum>(IEnumerable<T> source, TEnum copy, Dictionary<object, object> refs)
             where TEnum : ICollection<T>
         {
@@ -96,54 +84,20 @@ namespace Dynamics
         {
             return ListBase<T, List<T>>(source, new List<T>(), refs);
         }
-
-        //public static SortedList<T0, T1> SortedList<T0, T1>(SortedList<T0, T1> source, Dictionary<object, object> refs)
-        //{
-        //    return DictionaryBase<T0, T1, SortedList<T0, T1>>(source, new SortedList<T0, T1>(), refs);
-        //}
-
-        //static TDict DictionaryBase<T0, T1, TDict>(TDict source, TDict copy, Dictionary<object, object> refs)
-        //    where TDict : IDictionary<T0, T1>
-        //{
-        //    refs.Add(source, copy);
-        //    foreach (var x in source)
-        //        copy.Add(Type<T0>.Copy(x.Key, refs), Type<T1>.Copy(x.Value, refs));
-        //    return copy;
-        //}
-
-        //public static IDictionary<T0, T1> IDictionary<T0, T1>(IDictionary<T0, T1> source, Dictionary<object, object> refs)
-        //{
-        //    return DictionaryBase<T0, T1, IDictionary<T0, T1>>(source, new Dictionary<T0, T1>(source.Count), refs);
-        //}
-
-        //public static Dictionary<T0, T1> Dictionary<T0, T1>(Dictionary<T0, T1> source, Dictionary<object, object> refs)
-        //{
-        //    return DictionaryBase<T0, T1, Dictionary<T0, T1>>(source, new Dictionary<T0, T1>(), refs);
-        //}
-
-        //public static SortedDictionary<T0, T1> SortedDictionary<T0, T1>(SortedDictionary<T0, T1> source, Dictionary<object, object> refs)
-        //{
-        //    return DictionaryBase<T0, T1, SortedDictionary<T0, T1>>(source, new SortedDictionary<T0, T1>(), refs);
-        //}
-
-        //public static ISet<T> ISet<T>(ISet<T> source, Dictionary<object, object> refs)
-        //{
-        //    return EnumerableBase<T, ISet<T>>(source, new HashSet<T>(), refs);
-        //}
-
-        //public static HashSet<T> HashSet<T>(HashSet<T> source, Dictionary<object, object> refs)
-        //{
-        //    return EnumerableBase<T, HashSet<T>>(source, new HashSet<T>(), refs);
-        //}
-
-        //public static SortedSet<T> HashSet<T>(SortedSet<T> source, Dictionary<object, object> refs)
-        //{
-        //    return EnumerableBase<T, SortedSet<T>>(source, new SortedSet<T>(), refs);
-        //}
-
+        
         public static KeyValuePair<T0, T1> KeyValuePair<T0, T1>(KeyValuePair<T0, T1> source, Dictionary<object, object> refs)
         {
             return new KeyValuePair<T0, T1>(Type<T0>.Copy(source.Key, refs), Type<T1>.Copy(source.Value, refs));
+        }
+
+        public static T Delegate<T>(T source, Dictionary<object, object> refs)
+            where T : class
+        {
+            //FIXME: I think this works only for non-circular delegates
+            var del = (Delegate)(object)source;
+            var copy = (T)(object)System.Delegate.CreateDelegate(typeof(T), Type<object>.Copy(del.Target), del.Method);
+            refs[source] = copy;
+            return copy;
         }
     }
 }

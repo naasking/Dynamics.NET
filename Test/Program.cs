@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -117,6 +118,11 @@ namespace Test
             IsImmutable<KeyValuePair<int, char>>();
             IsImmutable<TransitiveField<int>>();
             IsImmutable<TransitiveProp<int>>();
+            IsImmutable<IntPtr>();
+            IsImmutable<MethodInfo>();
+            IsImmutable<FieldInfo>();
+            IsImmutable<MemberInfo>();
+            IsImmutable<MethodBase>();
         }
         static void IsImmutable<T>()
         {
@@ -266,6 +272,7 @@ namespace Test
                 { 3, "three" },
             },
             Enumerable.SequenceEqual);
+            IsCopied(new Action(CopyTests), (x, y) => x.Method == y.Method && x.Target == y.Target);
         }
         static void IsShared<T>(T orig)
         {

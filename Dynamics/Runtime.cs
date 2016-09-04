@@ -44,6 +44,30 @@ namespace Dynamics
         }
 
         /// <summary>
+        /// Checks subtyping relationships.
+        /// </summary>
+        /// <typeparam name="T">The supertype to check.</typeparam>
+        /// <param name="subtype">The subtype.</param>
+        /// <returns>True if <paramref name="subtype"/> is a subtype of <paramref name="supertype"/>.</returns>
+        /// <exception cref="ArgumentNullException">Thrown if argument is null.</exception>
+        /// <remarks>
+        /// This is an extension method on <see cref="System.Type"/> that checks subtyping relationships
+        /// on runtime types and type arguments:
+        /// <code>
+        /// Console.WriteLine(typeof(int).Subtypes(typeof(object)));
+        /// Console.WriteLine(typeof(int).Subtypes&lt;object&gt;());
+        /// Console.WriteLine(typeof(int).Subtypes&lt;string&gt;());
+        /// </code>
+        /// However, this check has an important limitation when dealing with type parameters. See
+        /// <see cref="System.Type.IsAssignableFrom"/>.
+        /// </remarks>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "supertype")]
+        public static bool Subtypes<T>(this Type subtype)
+        {
+            return subtype.Subtypes(typeof(T));
+        }
+
+        /// <summary>
         /// Normalizes a field name.
         /// </summary>
         /// <param name="field">The field whose name to normalize.</param>
@@ -488,7 +512,7 @@ namespace Dynamics
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="method"></param>
-        /// <returns></returns>
+        /// <returns>A open instance delegate of type <typeparamref name="T"/> for the designated method.</returns>
         public static T Create<T>(this MethodInfo method)
             where T : class
         {
