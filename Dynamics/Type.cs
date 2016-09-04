@@ -192,11 +192,19 @@ namespace Dynamics
             var members = new List<Expression>();
             var rofields = new Dictionary<string, Expression>();
             var noEmptyCtor = !type.IsValueType && !HasEmptyConstructor(type);
+            members.Add(null); // reserve slot for: y = new T(read-only-fields)
+            // need to add new obj to 'refs' before copying children in case of child->parent reference.
+            if (!type.IsValueType)
+            {
+                var tgv = typeof(Dictionary<object, object>).GetMethod("Add", new[] { typeof(object), typeof(object) });
+                members.Add(Expression.Call(refs, tgv, x, y));
+            }
+            // copy each member one at a time
             foreach (var field in type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance))
             {
                 var access = Expression.Field(x, field);
                 var copy = typeof(Type<>).MakeGenericType(field.FieldType)
-                                            .GetMethod("Copy", BindingFlags.Static | BindingFlags.Public, null,
+                                         .GetMethod("Copy", BindingFlags.Static | BindingFlags.Public, null,
                                                     new[] { field.FieldType, typeof(Dictionary<object, object>) }, null);
                 var ecopy = Expression.Call(copy, access, refs);
                 if (field.IsInitOnly || noEmptyCtor)
@@ -204,14 +212,7 @@ namespace Dynamics
                 else
                     members.Add(Expression.Assign(Expression.Field(y, field), ecopy));
             }
-            // need to add new obj to 'refs' before copying children in case of child->parent reference.
-            if (!type.IsValueType)
-            {
-                // add 'copy' to 'refs' so children can see it
-                var tgv = typeof(Dictionary<object, object>).GetMethod("Add", new[] { typeof(object), typeof(object) });
-                members.Insert(0, Expression.Call(refs, tgv, x, y));
-            }
-            members.Insert(0, Expression.Assign(y, ConstructNew(type, rofields)));
+            members[0] = Expression.Assign(y, ConstructNew(type, rofields));
             members.Add(y);
             dc = Expression.Block(new[] { y }, members);
             return Expression.Lambda<Func<T, Dictionary<object, object>, T>>(dc, x, refs).Compile();
