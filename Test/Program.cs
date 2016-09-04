@@ -315,8 +315,28 @@ namespace Test
         }
         #endregion
 
+        #region Constructor tests
+        static void CheckConstructors()
+        {
+            var x = Constructor<Func<int, int[]>>.Invoke(89);
+            Assert(x.Length == 89);
+            var s = Constructor<Func<char[], string>>.Invoke(new[] { 'h', 'e', 'l', 'l', 'o' });
+            Assert(s == "hello");
+            // following works, but breaks the debugger on the error thrown
+            //try
+            //{
+            //    var impossible = Constructor<Func<int[]>>.Invoke();
+            //    Assert(false);
+            //}
+            //catch (TypeInitializationException)
+            //{
+            //}
+        }
+        #endregion
+
         static void Main(string[] args)
         {
+            CheckConstructors();
             CircularityTests();
             CheckImmutable();
             CheckMutable();

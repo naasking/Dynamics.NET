@@ -170,17 +170,31 @@ namespace Dynamics
         public static TFunc Constructor<TFunc>()
             where TFunc : class
         {
-            var type = typeof(TFunc);
-            if (!type.Subtypes(typeof(Delegate)))
-                throw new ArgumentException("Type " + type.Name + " is not a delegate type.");
-            var invoke = type.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
+            var tfunc = typeof(TFunc);
+            if (!tfunc.Subtypes(typeof(Delegate)))
+                throw new ArgumentException("Type " + tfunc.Name + " is not a delegate type.");
+            var invoke = tfunc.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
             if (invoke.ReturnType != typeof(T))
                 throw new ArgumentException("Type T=" + typeof(T).Name + " does not match delegate return type " + invoke.ReturnType.Name);
+            var type = typeof(T);
             var ptypes = invoke.GetParameters().Select(x => x.ParameterType).ToArray();
-            var ctor = typeof(T).GetConstructor(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, ptypes, null);
-            var param = ptypes.Select(Expression.Parameter);
-            var newe = Expression.New(ctor, param);
-            return Expression.Lambda<TFunc>(newe, param).Compile();
+            // treat arrays specially as having a constructor with a single Int32 parameter
+            Expression body;
+            var param = ptypes.Select(Expression.Parameter).ToArray();
+            if (type.IsArray)
+            {
+                if (ptypes.Length > 1 && ptypes[0] != typeof(int))
+                    throw new ArgumentException("Array constructor requires a single parameter of type Int32.");
+                body = Expression.NewArrayBounds(type.GetElementType(), param);
+            }
+            else
+            {
+                var ctor = typeof(T).GetConstructor(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, ptypes, null);
+                if (ctor == null)
+                    throw new ArgumentException("Type " + tfunc.Name + " has no constructor with signature " + ptypes.Aggregate("(", (a, x) => a + x + ',') + ")->" + type.Name);
+                body = Expression.New(ctor, param);
+            }
+            return Expression.Lambda<TFunc>(body, param).Compile();
         }
 
         #region Copy helpers
