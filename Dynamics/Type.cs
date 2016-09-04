@@ -80,7 +80,7 @@ namespace Dynamics
             Create = type.Subtypes(typeof(MemberInfo))? null:
                      type.IsArray || type.IsValueType ? DefaultCtor:
                      type == typeof(string)           ? Expression.Lambda<Func<T>>(Expression.Constant(string.Empty)).Compile():
-                     HasEmptyConstructor(type)        ? Expression.Lambda<Func<T>>(Expression.New(typeof(T))).Compile():
+                     HasEmptyConstructor(type)        ? Constructor<Func<T>>():
                                                         () => (T)FormatterServices.GetUninitializedObject(type);
 
             // Immutable: any types decorated with [Pure] || T has init-only fields whose types are immutable
@@ -159,6 +159,34 @@ namespace Dynamics
         {
             return Mutability == Mutability.Mutable
                 || Mutability == Mutability.Maybe && IsMutable(value, new HashSet<object>());
+        }
+
+        /// <summary>
+        /// Create a delegate from a constructor.
+        /// </summary>
+        /// <typeparam name="T">The type being constructed.</typeparam>
+        /// <typeparam name="TFunc">The type of the delegate to create.</typeparam>
+        /// <returns>A delegate used for constructing types.</returns>
+        public static TFunc Constructor<TFunc>()
+            where TFunc : class
+        {
+            if (CtorCache<TFunc>.ctor != null) return CtorCache<TFunc>.ctor;
+            var type = typeof(TFunc);
+            if (!type.Subtypes(typeof(Delegate)))
+                throw new ArgumentException("Type " + type.Name + " is not a delegate type.");
+            var invoke = type.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
+            if (invoke.ReturnType != typeof(T)) throw new ArgumentException("Type T=" + typeof(T).Name + " does not match delegate return type " + invoke.ReturnType.Name);
+            var ptypes = invoke.GetParameters().Select(x => x.ParameterType).ToArray();
+            var param = ptypes.Select(Expression.Parameter);
+            var ctor = typeof(T).GetConstructor(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, ptypes, null);
+            var newe = Expression.New(ctor, param);
+            return CtorCache<TFunc>.ctor = Expression.Lambda<TFunc>(newe, param).Compile();
+        }
+
+        // cache for the constructor generator
+        static class CtorCache<TFunc>
+        {
+            internal static TFunc ctor;
         }
 
         #region Copy helpers
