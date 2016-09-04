@@ -11,7 +11,8 @@ The following features are provided out of the box:
  * analyzing nested generic types
  * simplified .NET types with kinding via Dynamics.Kind
  * identify and invoke type constructors via Type<T>.Constructor<TDelegate>()
-   or cached via Constructor<TDelegate>.Invoke(ctor-args)
+   or cached via Constructor<TDelegate>.Invoke(ctor-args), ie. call
+   "new List<T>(count)" as Constructor<Func<int, List<T>>>.Invoke(count)
 
 These are functions that are useful for serialization, runtime type
 and code generation, and similar applications where type structure
