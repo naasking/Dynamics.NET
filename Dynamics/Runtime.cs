@@ -493,7 +493,7 @@ namespace Dynamics
             where T : class
         {
             var type = typeof(T);
-            if (type.Subtypes(typeof(Delegate)))
+            if (!type.Subtypes(typeof(Delegate)))
                 throw new ArgumentException("Type " + type.Name + " is not a delegate type.");
             return (T)(object)Delegate.CreateDelegate(type, null, method, true);
         }

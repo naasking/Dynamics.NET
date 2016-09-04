@@ -177,50 +177,43 @@ namespace Dynamics
                     return icopy.GetMethod("Copy").Create<Func<T, Dictionary<object, object>, T>>();
             }
             // if type has a method in Copying static class, then dispatch to that
-            var match = typeof(Copying).GetMethod(type.Name);
+            var match = typeof(Copying).GetMethod(type.IsArray ? "Array" : type.Name);
             if (match != null)
             {
                 if (match.IsGenericMethod)
-                    match = match.MakeGenericMethod(type.GetGenericArguments());
+                    match = match.MakeGenericMethod(type.IsArray ? new[] { type.GetElementType() } : type.GetGenericArguments());
                 return match.Create<Func<T, Dictionary<object, object>, T>>();
             }
+            // if we get here, we need to dynamically generate a deepCopy method
             var x = Expression.Parameter(type, "x");
             var refs = Expression.Parameter(typeof(Dictionary<object, object>), "refs");
             var dc = x as Expression;
-            if (type.IsArray)
+            var y = Expression.Variable(type, "y");
+            var members = new List<Expression>();
+            var rofields = new Dictionary<string, Expression>();
+            var noEmptyCtor = !type.IsValueType && !HasEmptyConstructor(type);
+            foreach (var field in type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance))
             {
-                var acopy = new Func<int[], Dictionary<object, object>, int[]>(Copying.Array<int>).Method.GetGenericMethodDefinition();
-                dc = Expression.Call(acopy.MakeGenericMethod(type.GetElementType()), x, refs);
+                var access = Expression.Field(x, field);
+                var copy = typeof(Type<>).MakeGenericType(field.FieldType)
+                                            .GetMethod("Copy", BindingFlags.Static | BindingFlags.Public, null,
+                                                    new[] { field.FieldType, typeof(Dictionary<object, object>) }, null);
+                var ecopy = Expression.Call(copy, access, refs);
+                if (field.IsInitOnly || noEmptyCtor)
+                    rofields.Add(field.FieldName().ToLower(), ecopy);
+                else
+                    members.Add(Expression.Assign(Expression.Field(y, field), ecopy));
             }
-            else
+            // need to add new obj to 'refs' before copying children in case of child->parent reference.
+            if (!type.IsValueType)
             {
-                var y = Expression.Variable(type, "y");
-                var members = new List<Expression>();
-                var rofields = new Dictionary<string, Expression>();
-                var noEmptyCtor = !type.IsValueType && !HasEmptyConstructor(type);
-                foreach (var field in type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance))
-                {
-                    var access = Expression.Field(x, field);
-                    var copy = typeof(Type<>).MakeGenericType(field.FieldType)
-                                             .GetMethod("Copy", BindingFlags.Static | BindingFlags.NonPublic, null,
-                                                        new[] { field.FieldType, typeof(Dictionary<object, object>) }, null);
-                    var ecopy = Expression.Call(copy, access, refs);
-                    if (field.IsInitOnly || noEmptyCtor)
-                        rofields.Add(field.FieldName().ToLower(), ecopy);
-                    else
-                        members.Add(Expression.Assign(Expression.Field(y, field), ecopy));
-                }
-                // need to add new obj to 'refs' before copying children in case of child->parent reference.
-                if (!type.IsValueType)
-                {
-                    // add 'copy' to 'refs' so children can see it
-                    var tgv = typeof(Dictionary<object, object>).GetMethod("Add", new[] { typeof(object), typeof(object) });
-                    members.Insert(0, Expression.Call(refs, tgv, x, y));
-                }
-                members.Insert(0, Expression.Assign(y, ConstructNew(type, rofields)));
-                members.Add(y);
-                dc = Expression.Block(new[] { y }, members);
+                // add 'copy' to 'refs' so children can see it
+                var tgv = typeof(Dictionary<object, object>).GetMethod("Add", new[] { typeof(object), typeof(object) });
+                members.Insert(0, Expression.Call(refs, tgv, x, y));
             }
+            members.Insert(0, Expression.Assign(y, ConstructNew(type, rofields)));
+            members.Add(y);
+            dc = Expression.Block(new[] { y }, members);
             return Expression.Lambda<Func<T, Dictionary<object, object>, T>>(dc, x, refs).Compile();
         }
 
