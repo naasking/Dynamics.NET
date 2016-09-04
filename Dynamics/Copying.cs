@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 
@@ -17,6 +19,8 @@ namespace Dynamics
     /// </summary>
     internal static class Copying
     {
+        public static readonly MethodInfo[] Methods = typeof(Copying).GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.DeclaredOnly);
+
         public static T[] Array<T>(T[] source, Dictionary<object, object> refs)
         {
             var x = new T[source.Length];
@@ -90,10 +94,18 @@ namespace Dynamics
             return new KeyValuePair<T0, T1>(Type<T0>.Copy(source.Key, refs), Type<T1>.Copy(source.Value, refs));
         }
 
+        public static ReadOnlyCollection<T> ReadOnlyCollection<T>(ReadOnlyCollection<T> source, Dictionary<object, object> refs)
+        {
+            //FIXME: this doesn't quite work because T could have a back ref to this collection, which isn't yet created
+            return Type<T>.Mutability == Mutability.Immutable
+                ? source
+                : new ReadOnlyCollection<T>(source.Select(x => Type<T>.Copy(x, refs)).ToList());
+        }
+
         public static T Delegate<T>(T source, Dictionary<object, object> refs)
             where T : class
         {
-            //FIXME: I think this works only for non-circular delegates
+            //FIXME: I think this works only for non-circular delegates, ie. target could have back ref to this delegate
             var del = (Delegate)(object)source;
             var copy = (T)(object)System.Delegate.CreateDelegate(typeof(T), Type<object>.Copy(del.Target), del.Method);
             refs[source] = copy;

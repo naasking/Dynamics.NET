@@ -180,20 +180,29 @@ namespace Dynamics
                 if (type.Subtypes(icopy))
                     return icopy.GetMethod("Copy").Create<Func<T, Dictionary<object, object>, T>>();
             }
+            // handle arrays and delegates specially
+            if (type.IsArray)
+                return new Func<int[], Dictionary<object, object>, int[]>(Copying.Array)
+                       .Method
+                       .GetGenericMethodDefinition()
+                       .MakeGenericMethod(type.GetElementType())
+                       .Create<Func<T, Dictionary<object, object>, T>>();
+            if (type.Subtypes<Delegate>())
+                return new Func<Action, Dictionary<object, object>, Action>(Copying.Delegate)
+                       .Method
+                       .GetGenericMethodDefinition()
+                       .MakeGenericMethod(type)
+                       .Create<Func<T, Dictionary<object, object>, T>>();
             // if type has a method in Copying static class, then dispatch to that
-            var matchName = type.IsArray              ? "Array":
-                            type.Subtypes<Delegate>() ? "Delegate":
+            var matchName = type.IsGenericType        ? type.Name.Remove(type.Name.Length - 2):
                                                         type.Name;
-            var match = typeof(Copying).GetMethod(matchName);
+            var match = Copying.Methods
+                        .SingleOrDefault(m => m.Name.Equals(matchName, StringComparison.Ordinal)
+                                           && (m.ReturnType == type || m.ReturnType.ContainsGenericParameters && type.IsGenericType));
             if (match != null)
             {
                 if (match.IsGenericMethod)
-                {
-                    var args = type.IsArray              ? new[] { type.GetElementType() }:
-                               type.Subtypes<Delegate>() ? new[] { type }:
-                                                           type.GetGenericArguments();
-                    match = match.MakeGenericMethod(args);
-                }
+                    match = match.MakeGenericMethod(type.GetGenericArguments());
                 return match.Create<Func<T, Dictionary<object, object>, T>>();
             }
             // if we get here, we need to dynamically generate a deepCopy method
@@ -323,8 +332,7 @@ namespace Dynamics
         static bool MutableBlacklist(Type type)
         {
             return type.Subtypes(typeof(Delegate))
-                || type.IsArray
-                || type.IsInterface;
+                || type.IsArray;
         }
 
         static Mutability TransitiveMutability(Type type, out Func<T, HashSet<object>, bool> isMutable)
