@@ -121,6 +121,7 @@ namespace Dynamics
             object x;
             if (type != typeof(T))
             {
+                // type is a subtype of T, so dispatch to the appropriate handler
                 Func<T, Dictionary<object, object>, T> f;
                 if (!subtypeCopy.TryGetValue(type, out f))
                 {
@@ -144,7 +145,7 @@ namespace Dynamics
         /// <summary>
         /// Override the default auto-generated copy method with a more efficient one.
         /// </summary>
-        /// <param name="copy"></param>
+        /// <param name="copy">The delegate that overrides deep copying behaviour.</param>
         public static void OverrideCopy(Func<T, Dictionary<object, object>, T> copy)
         {
             deepCopy = copy;
