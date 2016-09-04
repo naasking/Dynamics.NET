@@ -169,6 +169,9 @@ namespace Dynamics
 
         static Func<T, Dictionary<object, object>, T> GenerateCopy(Type type)
         {
+            // if T is an interface type, generate nothing since the base copy code will already
+            // dispatch to the concrete subtype for copying purposes
+            if (type.IsInterface) return null;
             // if type implements ICopiable, return delegate dispatching to Copy method
             if (!type.IsValueType)
             {

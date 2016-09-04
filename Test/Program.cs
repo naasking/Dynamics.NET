@@ -257,6 +257,15 @@ namespace Test
             IsCopied(new EquatableSeq<int>(2, 3));
             IsCopied(Recurse.Cycle(), (orig, other) => other.self == other);
             IsCopied(new Copiable(), (orig, copy) => copy.done);
+            IsCopied(new List<int> { 1, 2, 3 }, Enumerable.SequenceEqual);
+            IsCopied(new[] { 1, 2, 3 }, Enumerable.SequenceEqual);
+            IsCopied(new Dictionary<int, string>()
+            {
+                { 1, "one" },
+                { 2, "two" },
+                { 3, "three" },
+            },
+            Enumerable.SequenceEqual);
         }
         static void IsShared<T>(T orig)
         {
