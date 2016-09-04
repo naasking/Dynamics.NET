@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Dynamics</RootNamespace>
-    <AssemblyName>Dynamics</AssemblyName>
+    <AssemblyName>Dynamics.NET</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -34,6 +34,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Copying.cs" />
     <Compile Include="Cycles.cs" />
     <Compile Include="ICopiable.cs" />
     <Compile Include="Kind.cs" />

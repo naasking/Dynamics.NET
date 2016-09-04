@@ -483,20 +483,19 @@ namespace Dynamics
             return final;
         }
 
-        #region Internal helpers
-        internal static T[] Copy<T>(this T[] source, Dictionary<object, object> refs)
+        /// <summary>
+        /// Shorthand for creating open instance delegates from method handles.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="method"></param>
+        /// <returns></returns>
+        public static T Create<T>(this MethodInfo method)
+            where T : class
         {
-            object copied;
-            if (refs.TryGetValue(source, out copied))
-                return (T[])copied;
-            var x = new T[source.Length];
-            for (int i = 0; i < source.Length; ++i)
-            {
-                x[i] = Type<T>.Copy(source[i], refs);
-            }
-            refs[source] = x;
-            return x;
+            var type = typeof(T);
+            if (type.Subtypes(typeof(Delegate)))
+                throw new ArgumentException("Type " + type.Name + " is not a delegate type.");
+            return (T)(object)Delegate.CreateDelegate(type, null, method, true);
         }
-        #endregion
     }
 }

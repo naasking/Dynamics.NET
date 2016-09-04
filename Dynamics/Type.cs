@@ -40,7 +40,7 @@ namespace Dynamics
         /// <summary>
         /// Performs a deep copy of any value.
         /// </summary>
-        static readonly Func<T, Dictionary<object, object>, T> deepCopy;
+        static Func<T, Dictionary<object, object>, T> deepCopy;
 
         /// <summary>
         /// Dynamically checks value state for mutability.
@@ -107,18 +107,12 @@ namespace Dynamics
         }
 
         /// <summary>
-        /// Checks a value's mutability.
+        /// The copy method that preserves sharing and circular references.
         /// </summary>
-        /// <param name="value">The value to check for mutability.</param>
-        /// <returns>True if the current configuration is mutable, false otherwise.</returns>
-        public static bool IsMutable(T value)
-        {
-            return Mutability == Mutability.Mutable
-                || Mutability == Mutability.Maybe && IsMutable(value, new HashSet<object>());
-        }
-
-        #region Copy helpers
-        internal static T Copy(T value, Dictionary<object, object> refs)
+        /// <param name="value"></param>
+        /// <param name="refs"></param>
+        /// <returns></returns>
+        public static T Copy(T value, Dictionary<object, object> refs)
         {
             if (Mutability == Mutability.Immutable || value == null)
                 return value;
@@ -146,6 +140,27 @@ namespace Dynamics
             }
         }
 
+        /// <summary>
+        /// Override the default auto-generated copy method with a more efficient one.
+        /// </summary>
+        /// <param name="copy"></param>
+        public static void OverrideCopy(Func<T, Dictionary<object, object>, T> copy)
+        {
+            deepCopy = copy;
+        }
+
+        /// <summary>
+        /// Checks a value's mutability.
+        /// </summary>
+        /// <param name="value">The value to check for mutability.</param>
+        /// <returns>True if the current configuration is mutable, false otherwise.</returns>
+        public static bool IsMutable(T value)
+        {
+            return Mutability == Mutability.Mutable
+                || Mutability == Mutability.Maybe && IsMutable(value, new HashSet<object>());
+        }
+
+        #region Copy helpers
         static T DispatchCopy<T0>(T value, Dictionary<object, object> refs)
             where T0 : T
         {
@@ -154,19 +169,27 @@ namespace Dynamics
 
         static Func<T, Dictionary<object, object>, T> GenerateCopy(Type type)
         {
-            if (!type.IsValueType) {
+            // if type implements ICopiable, return delegate dispatching to Copy method
+            if (!type.IsValueType)
+            {
                 var icopy = typeof(ICopiable<>).MakeGenericType(type);
                 if (type.Subtypes(icopy))
-                    return (Func<T, Dictionary<object, object>, T>)Delegate.CreateDelegate(
-                        typeof(Func<T, Dictionary<object, object>, T>), null,
-                        icopy.GetMethod("Copy"));
+                    return icopy.GetMethod("Copy").Create<Func<T, Dictionary<object, object>, T>>();
+            }
+            // if type has a method in Copying static class, then dispatch to that
+            var match = typeof(Copying).GetMethod(type.Name);
+            if (match != null)
+            {
+                if (match.IsGenericMethod)
+                    match = match.MakeGenericMethod(type.GetGenericArguments());
+                return match.Create<Func<T, Dictionary<object, object>, T>>();
             }
             var x = Expression.Parameter(type, "x");
             var refs = Expression.Parameter(typeof(Dictionary<object, object>), "refs");
             var dc = x as Expression;
             if (type.IsArray)
             {
-                var acopy = new Func<int[], Dictionary<object, object>, int[]>(Runtime.Copy<int>).Method.GetGenericMethodDefinition();
+                var acopy = new Func<int[], Dictionary<object, object>, int[]>(Copying.Array<int>).Method.GetGenericMethodDefinition();
                 dc = Expression.Call(acopy.MakeGenericMethod(type.GetElementType()), x, refs);
             }
             else
@@ -292,7 +315,8 @@ namespace Dynamics
         static bool MutableBlacklist(Type type)
         {
             return type.Subtypes(typeof(Delegate))
-                || type.IsArray;
+                || type.IsArray
+                || type.IsInterface;
         }
 
         static Mutability TransitiveMutability(Type type, out Func<T, HashSet<object>, bool> isMutable)
