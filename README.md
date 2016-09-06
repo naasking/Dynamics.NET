@@ -37,9 +37,9 @@ The efficient form is simply:
 
 If a type is transitively immutable, no mutation will ever be observable
 via any runtime instance. If a type is mutable, then mutation will be
-visible given any instance.
+observable given any instance.
 
-If a type is Mutability.Maybe, then whether mutation is visible depends
+If a type is Mutability.Maybe, then whether mutation is observable depends
 on runtime data. You can determine actual mutability for certain via:
 
     bool isMutable = Type<T>.IsMutable(instance);
