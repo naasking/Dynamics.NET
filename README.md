@@ -123,10 +123,10 @@ Basically, any delegate signature will work as long as the type
 implements a constructor with that signature.
 
 As a special case to use in serialization-type scenarios, there
-is also have a Type&lt;T&gt;.Create delegate that creates an empty type
-using the most efficient method available. If the type has an
-empty constructor, it uses that, otherwise it falls back on
-.NET's FormatterServices.
+is also a Type&lt;T&gt;.Create delegate that creates an empty
+instance using the most efficient method available. If the type
+has an empty constructor, it uses that, otherwise it falls back
+on .NET's FormatterServices.
 
 ## Kind system
 
