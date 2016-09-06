@@ -32,7 +32,7 @@ namespace Dynamics
             var invoke = tfunc.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
             var type = invoke.ReturnType;
             if (type.IsAbstract || type.IsInterface)
-                throw new ArgumentException("Return type of constructor " + tfunc.Name + " is abstract or an interface.");
+                throw new ArgumentException("No constructors for abstract or interface type " + type.Name + ".");
             var ptypes = invoke.GetParameters().Select(x => x.ParameterType).ToArray();
             // treat arrays specially as having a constructor with a single Int32 parameter
             Expression body;

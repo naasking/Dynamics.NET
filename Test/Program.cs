@@ -280,11 +280,11 @@ namespace Test
             IsCopied(new Action(CopyTests), (x, y) => x.Method == y.Method && x.Target == y.Target);
 
             // check circular delegates
-            Action tst = null;
-            tst = () => Console.WriteLine(tst.GetHashCode());
-            Console.Write("Try delegate: ");
-            tst();
-            IsCopied(tst, (x, y) => x != y && x.Target != y.Target);
+            //FIXME: this isn't technically correct, since Type<T>.Copy actually duplicates the
+            //inner delegate since it can't update the delegate's readonly fields properly at this time
+            Func<object> tst = null;
+            tst = () => tst;
+            IsCopied(tst, (x, y) => x != y && x() != y() && x() == x() && y() == y());
         }
         static void IsShared<T>(T orig)
         {
