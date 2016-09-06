@@ -51,14 +51,14 @@ namespace Dynamics
         //FIXME: add structural comparison?
 
         /// <summary>
-        /// The cached delegate for <see cref="EqualityComparer{T}.Default.Equals"/>.
+        /// The cached delegate for <see cref="EqualityComparer{T}.Default"/>.Equals.
         /// </summary>
         public static readonly Func<T, T, bool> DefaultEquals = typeof(T).Subtypes(typeof(IEquatable<T>)) && !typeof(T).IsValueType
             ? (Func<T, T, bool>)Delegate.CreateDelegate(typeof(Func<T, T, bool>), null, typeof(T).GetMethod("Equals", new[] { typeof(T) }))
             : EqualityComparer<T>.Default.Equals;
 
         /// <summary>
-        /// The cached delegate for <see cref="EqualityComparer{T}.Default.GetHashCode"/>.
+        /// The cached delegate for <see cref="EqualityComparer{T}.Default"/>.GetHashCode.
         /// </summary>
         public static readonly Func<T, int> DefaultHash = EqualityComparer<T>.Default.GetHashCode;
 

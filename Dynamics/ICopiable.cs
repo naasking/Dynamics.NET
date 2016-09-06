@@ -12,9 +12,6 @@ namespace Dynamics
     /// <remarks>
     /// The type need not perform an actual deep copy, but it must at least
     /// preserve thread safety and other desirable properties of copies.
-    /// 
-    /// The object must also add itself to <paramref name="references"/>
-    /// before building any child objects in order to preserve sharing.
     /// </remarks>
     public interface ICopiable<TSelf>
         where TSelf : class
@@ -24,6 +21,10 @@ namespace Dynamics
         /// </summary>
         /// <param name="references">A dictionary mapping old references to new copies.</param>
         /// <returns>A copy of this object.</returns>
+        /// <remarks>
+        /// The object must also add itself to <paramref name="references"/>
+        /// before building any child objects in order to preserve sharing.
+        /// </remarks>
         TSelf Copy(Dictionary<object, object> references);
     }
 }

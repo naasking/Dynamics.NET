@@ -46,7 +46,7 @@ namespace Dynamics
         /// </summary>
         /// <typeparam name="T">The supertype to check.</typeparam>
         /// <param name="subtype">The subtype.</param>
-        /// <returns>True if <paramref name="subtype"/> is a subtype of <paramref name="supertype"/>.</returns>
+        /// <returns>True if <paramref name="subtype"/> is a subtype of <typeparamref name="T"/>.</returns>
         /// <exception cref="ArgumentNullException">Thrown if argument is null.</exception>
         /// <remarks>
         /// This is an extension method on <see cref="System.Type"/> that checks subtyping relationships
@@ -232,13 +232,13 @@ namespace Dynamics
         /// <summary>
         /// Checks whether the given member has a particular attribute.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="member"></param>
-        /// <returns></returns>
-        public static bool Has<T>(this ICustomAttributeProvider x)
+        /// <typeparam name="T">The attribute type to search for.</typeparam>
+        /// <param name="member">The member to search for attributes.</param>
+        /// <returns>True if the attribute is present, false otherwise.</returns>
+        public static bool Has<T>(this ICustomAttributeProvider member)
             where T : Attribute
         {
-            return x.GetCustomAttributes(typeof(T), false).Length != 0;
+            return member.GetCustomAttributes(typeof(T), false).Length != 0;
         }
 
         /// <summary>
@@ -273,12 +273,39 @@ namespace Dynamics
             // this is more future-proof, just slower:
             // || field.GetCustomAttributes(typeof(COMP.CompilerGeneratedattribute), false)
         }
-        
+
         /// <summary>
         /// The <see cref="Dynamics.Kind"/> classifying the <see cref="System.Type"/>.
         /// </summary>
         /// <param name="type">The <see cref="System.Type"/> to classify.</param>
         /// <returns>The <see cref="Dynamics.Kind"/> classifying <paramref name="type"/>.</returns>
+        /// <remarks>
+        /// Note that arrays are treated like generic types with generic arguments. So an
+        /// instantiated array type, like int[], will return <see cref="Dynamics.Kind.Application"/>
+        /// with the argument list consisting of the array element type.
+        /// <code>
+        /// var simpleType = typeof(int).Kind();    // Type
+        /// var typeapp = typeof(List&lt;int&gt;).Kind(); // Application
+        /// var typedef = typeof(List&lt;&gt;).Kind();    // Definition
+        /// var byref = typeof(int).MakeByRefType();// Reference
+        /// 
+        /// Type definition;
+        /// Type[] context;
+        /// switch(typeof(Dictionary&lt;int, string&gt;).Kind(out definition, out context))
+        /// {
+        ///     case Kind.Application:
+        ///         // definition == typeof(Dictionary&lt;,&gt;)
+        ///         // context    == new[] { typeof(int), typeof(string) }
+        ///         // roundtrip  == typeof(Dictionary&lt;int, string&gt;)
+        ///         var roundtrip = Kind.Definition.Apply(definition, context);
+        ///         break;
+        ///     default:
+        ///         throw new Excepetion("Impossible!");
+        /// }
+        /// // construct an array type: intArray == typeof(int[])
+        /// var intArray = Kind.Definition.Apply(typeof(Array), typeof(int));
+        /// </code>
+        /// </remarks>
         public static Kind Kind(this Type type)
         {
             return type.IsArray                 ? Dynamics.Kind.Definition:
@@ -308,9 +335,31 @@ namespace Dynamics
         /// <item><term><see cref="Dynamics.Kind.Pointer"/></term><term>Base/element type.</term></item>
         /// <item><term><see cref="Dynamics.Kind.Reference"/></term><term>Base/element type.</term></item>
         /// </list>
-        /// Note that arrays, pointers and by-ref types are treated like generic types with generic arguments. So
-        /// an instantiated array type, like int[], will return <see cref="Dynamics.Kind.Application"/> with the
-        /// argument list consisting of the array element type.
+        /// Note that arrays are treated like generic types with generic arguments. So an
+        /// instantiated array type, like int[], will return <see cref="Dynamics.Kind.Application"/>
+        /// with the argument list consisting of the array element type.
+        /// <code>
+        /// var simpleType = typeof(int).Kind();    // Type
+        /// var typeapp = typeof(List&lt;int&gt;).Kind(); // Application
+        /// var typedef = typeof(List&lt;&gt;).Kind();    // Definition
+        /// var byref = typeof(int).MakeByRefType();// Reference
+        /// 
+        /// Type definition;
+        /// Type[] context;
+        /// switch(typeof(Dictionary&lt;int, string&gt;).Kind(out definition, out context))
+        /// {
+        ///     case Kind.Application:
+        ///         // definition == typeof(Dictionary&lt;,&gt;)
+        ///         // context    == new[] { typeof(int), typeof(string) }
+        ///         // roundtrip  == typeof(Dictionary&lt;int, string&gt;)
+        ///         var roundtrip = Kind.Definition.Apply(definition, context);
+        ///         break;
+        ///     default:
+        ///         throw new Excepetion("Impossible!");
+        /// }
+        /// // construct an array type: intArray == typeof(int[])
+        /// var intArray = Kind.Definition.Apply(typeof(Array), typeof(int));
+        /// </code>
         /// </remarks>
         public static Kind Kind(this Type type, out Type[] context)
         {
@@ -365,9 +414,31 @@ namespace Dynamics
         /// <item><term><see cref="Dynamics.Kind.Pointer"/></term><term>Base/element type.</term></item>
         /// <item><term><see cref="Dynamics.Kind.Reference"/></term><term>Base/element type.</term></item>
         /// </list>
-        /// Note that arrays, pointers and by-ref types are treated like generic types with generic arguments. So
-        /// an instantiated array type, like int[], will return <see cref="Dynamics.Kind.Application"/> with the
-        /// argument list consisting of the array element type.
+        /// Note that arrays are treated like generic types with generic arguments. So an
+        /// instantiated array type, like int[], will return <see cref="Dynamics.Kind.Application"/>
+        /// with the argument list consisting of the array element type.
+        /// <code>
+        /// var simpleType = typeof(int).Kind();    // Type
+        /// var typeapp = typeof(List&lt;int&gt;).Kind(); // Application
+        /// var typedef = typeof(List&lt;&gt;).Kind();    // Definition
+        /// var byref = typeof(int).MakeByRefType();// Reference
+        /// 
+        /// Type definition;
+        /// Type[] context;
+        /// switch(typeof(Dictionary&lt;int, string&gt;).Kind(out definition, out context))
+        /// {
+        ///     case Kind.Application:
+        ///         // definition == typeof(Dictionary&lt;,&gt;)
+        ///         // context    == new[] { typeof(int), typeof(string) }
+        ///         // roundtrip  == typeof(Dictionary&lt;int, string&gt;)
+        ///         var roundtrip = Kind.Definition.Apply(definition, context);
+        ///         break;
+        ///     default:
+        ///         throw new Excepetion("Impossible!");
+        /// }
+        /// // construct an array type: intArray == typeof(int[])
+        /// var intArray = Kind.Definition.Apply(typeof(Array), typeof(int));
+        /// </code>
         /// </remarks>
         public static Kind Kind(this Type type, out Type definition, out Type[] context)
         {
@@ -416,6 +487,33 @@ namespace Dynamics
         /// <param name="definition">The type definition.</param>
         /// <param name="args">The applicable type arguments.</param>
         /// <returns>A constructed type.</returns>
+        /// <remarks>
+        /// Note that arrays are treated like generic types with generic arguments. So an
+        /// instantiated array type, like int[], will return <see cref="Dynamics.Kind.Application"/>
+        /// with the argument list consisting of the array element type.
+        /// <code>
+        /// var simpleType = typeof(int).Kind();    // Type
+        /// var typeapp = typeof(List&lt;int&gt;).Kind(); // Application
+        /// var typedef = typeof(List&lt;&gt;).Kind();    // Definition
+        /// var byref = typeof(int).MakeByRefType();// Reference
+        /// 
+        /// Type definition;
+        /// Type[] context;
+        /// switch(typeof(Dictionary&lt;int, string&gt;).Kind(out definition, out context))
+        /// {
+        ///     case Kind.Application:
+        ///         // definition == typeof(Dictionary&lt;,&gt;)
+        ///         // context    == new[] { typeof(int), typeof(string) }
+        ///         // roundtrip  == typeof(Dictionary&lt;int, string&gt;)
+        ///         var roundtrip = Kind.Definition.Apply(definition, context);
+        ///         break;
+        ///     default:
+        ///         throw new Excepetion("Impossible!");
+        /// }
+        /// // construct an array type: intArray == typeof(int[])
+        /// var intArray = Kind.Definition.Apply(typeof(Array), typeof(int));
+        /// </code>
+        /// </remarks>
         public static Type Apply(this Kind kind, Type definition, params Type[] args)
         {
             switch (kind)

@@ -145,6 +145,8 @@ construct types of the needed kinds:
 		default:
 			throw new Excepetion("Impossible!");
 	}
+	// construct an array type: intArray == typeof(int[])
+	var intArray = Kind.Definition.Apply(typeof(Array), typeof(int));
 
 # Status
 

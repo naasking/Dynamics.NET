@@ -17,6 +17,19 @@ namespace Dynamics
         /// <summary>
         /// A delegate that constructs a type
         /// </summary>
+        /// <remarks>
+        /// Here's the constructor to build strings from char[]:
+        /// <code>
+        /// var createString = Constructor&lt;Func&lt;char[], string&gt;&gt;.Invoke;
+        /// var hello = createString(new[] { 'h', 'e', 'l', 'l', 'o' })
+        /// </code>
+        /// Arrays have pseudo-constructors which are also exposed
+        /// as if they were ordinary constructors:
+        /// <code>
+        /// var createArray = Constructor&lt;Func&lt;int, T[]&gt;&gt;.Invoke;
+        /// var newArray = createArray(100); // 100 item array
+        /// </code>
+        /// </remarks>
         public static readonly TFunc Invoke;
 
         /// <summary>
