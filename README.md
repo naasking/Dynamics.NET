@@ -210,6 +210,7 @@ other projects, so it's not all brand new and untested, but some
 of it is.
 
 The test suite isn't complete, but it's sufficient for most purposes
-so please experiment and let me know if there are any other types
-of functions that might be useful for a general purpose reflection
-library of this sort.
+so please experiment.
+
+Suggestions for more useful features for general purpose reflection
+are welcome!
