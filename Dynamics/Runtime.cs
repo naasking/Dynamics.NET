@@ -31,14 +31,14 @@ namespace Dynamics
         /// <see cref="System.Type.IsAssignableFrom"/>.
         /// </remarks>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1704:IdentifiersShouldBeSpelledCorrectly", MessageId = "supertype")]
-        public static bool Subtypes(this Type subtype, Type supertype)
+        public static bool Subtypes(this Type subtype, Type supertype, bool unifyVariables = false)
         {
             if (supertype == null) throw new ArgumentNullException("supertype");
             if (subtype == null) throw new ArgumentNullException("subtype");
-            //FUTURE: this only returns true for generic parameter if subtype is exactly a type constraint
-            //that appears on supertype. A real subtyping relation would return true if it subtypes all
-            //of the constraints.
-            return supertype.IsAssignableFrom(subtype);
+            //FIXME: this still may not be general enough a subtyping relation, ie. supertype may contain generic parameters that
+            //need to unify with types inside 'subtype' -- need full unification to ascertain proper subtyping?
+            return supertype.IsAssignableFrom(subtype)
+                || unifyVariables && supertype.IsGenericParameter && Array.TrueForAll(supertype.GetGenericParameterConstraints(), x => subtype.Subtypes(x));
         }
 
         /// <summary>
@@ -313,7 +313,7 @@ namespace Dynamics
                    type.IsByRef                 ? Dynamics.Kind.Reference:
                    type.IsGenericParameter      ? Dynamics.Kind.Parameter:
                    type.IsGenericTypeDefinition ? Dynamics.Kind.Definition:
-                   type.IsGenericType           ? Dynamics.Kind.Application:
+                   type.IsGenericType           ? Dynamics.Kind.Application: //this should match ContainsGenericParameters
                                                   Dynamics.Kind.Type;
         }
 
@@ -616,6 +616,19 @@ namespace Dynamics
             if (!type.Subtypes(typeof(Delegate)))
                 throw new ArgumentException("Type " + type.Name + " is not a delegate type.");
             return (T)(object)Delegate.CreateDelegate(type, null, method, true);
+        }
+
+        /// <summary>
+        /// Am efficient universal visitor interface.
+        /// </summary>
+        /// <typeparam name="TVisitor"></typeparam>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="visitor"></param>
+        /// <param name="value"></param>
+        public static void Accept<TVisitor, T>(this TVisitor visitor, T value)
+            where TVisitor : class
+        {
+            Visitor<TVisitor, T>.Invoke(visitor, value);
         }
 
         #region Dynamic type resolver
