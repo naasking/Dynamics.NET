@@ -69,6 +69,8 @@ namespace Dynamics
                 Expression.Assign(localType, Expression.Call(p, typeof(object).GetMethod("GetType")))
             };
             // build a sequence of subtype tests until type <: parameter-type
+            //FIXME: if T is sealed, then we need only pick the single closest match. Perhaps
+            //should also insert a first test and dispatch in case GetType() == T.
             int i = 0;
             while (!type.Subtypes(matches[i].Params[0].ParameterType))
             {
@@ -80,6 +82,10 @@ namespace Dynamics
             }
             // this is the last match, where type <: parameter type, so we just invoke the most specific case
             var final = matches[i];
+            //FIXME: cases with generic parameters are correctly last in the list of matches, but
+            //final.Method is now a generic method for some subtype of T, so we need to perform a
+            //dynamic dispatch, probably via IDynamicType, to extract the actual type to bind the
+            //generic parameter.
             tests.Add(Expression.Call(v, final.Method, Expression.Convert(p, final.Params[0].ParameterType)));
             tests.Add(Expression.Label(exit));
             var body = Expression.Block(new[] { localType }, tests);
