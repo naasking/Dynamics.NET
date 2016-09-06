@@ -433,7 +433,7 @@ namespace Test
         static void DispatchMatch<T>()
         {
             var dispatcher = new Dispatcher();
-            Runtime.Resolve(ref dispatcher, typeof(T));
+            Runtime.GetType(ref dispatcher, typeof(T));
             Assert(dispatcher.Type == typeof(T));
         }
         #endregion

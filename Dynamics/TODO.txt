@@ -2,10 +2,8 @@
 
 == v1.0 ==
 
- * add PIC from Sasa or some simpler variant if possible
- * add more tests, particular deeply circular copies
  * add more types/methods to mutability whitelist
- * current approach to circlar resolution doesn't work well
+ * current approach to circlar copy resolution doesn't work well
    enough, particularly for immutable types whose children
    have back refs/aren't themselves immutable, ie. delegates,
    ReadOnlyCollection<object>, etc. Maybe have to switch to

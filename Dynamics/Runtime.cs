@@ -529,7 +529,7 @@ namespace Dynamics
         /// <typeparam name="T">The dispatcher type.</typeparam>
         /// <param name="dispatch">The dispatcher.</param>
         /// <param name="type">The dynamic type.</param>
-        public static void Resolve<T>(ref T dispatch, Type type)
+        public static void GetType<T>(ref T dispatch, Type type)
             where T : struct, IDispatcher
         {
             Dispatcher x;
@@ -543,6 +543,7 @@ namespace Dynamics
             }
             x.Dispatch(ref dispatch);
         }
+
         abstract class Dispatcher
         {
             public abstract void Dispatch<TDispatch>(ref TDispatch handler)
