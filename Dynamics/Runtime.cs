@@ -17,6 +17,13 @@ namespace Dynamics
         /// </summary>
         /// <param name="subtype">The subtype.</param>
         /// <param name="supertype">The potential supertype.</param>
+        /// <param name="unifyVariables">
+        /// Controls whether a deeper subtyping check occurs. Defaults to false, which is the ordinary
+        /// <see cref="Type.IsAssignableFrom"/> method, but if true and the <paramref name="supertype"/>
+        /// is a generic parameter, then <paramref name="subtype"/> is recursively compared for subtyping
+        /// matches to all of <paramref name="supertype"/>'s generic parameter constraints. This means
+        /// that the type parameter can be successfully bound via MakeGenericMethod or MakeGenericType.
+        /// </param>
         /// <returns>True if <paramref name="subtype"/> is a subtype of <paramref name="supertype"/>.</returns>
         /// <exception cref="ArgumentNullException">Thrown if argument is null.</exception>
         /// <remarks>

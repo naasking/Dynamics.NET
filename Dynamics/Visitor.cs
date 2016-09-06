@@ -11,16 +11,15 @@ namespace Dynamics
     /// A generic visitor dispatcher.
     /// </summary>
     /// <typeparam name="TVisitor">The visitor to dispatch to.</typeparam>
-    /// <typeparam name="T">The type being dispatched.</typeparam>
     public static class Visitor<TVisitor>
         where TVisitor : class
     {
         /// <summary>
         /// Invoke the visitor's best matching method.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="visitor"></param>
-        /// <param name="value"></param>
+        /// <typeparam name="T">The type being dispatched on.</typeparam>
+        /// <param name="visitor">The visitor being dispatched to.</param>
+        /// <param name="value">The value being dispatched.</param>
         public static void Invoke<T>(TVisitor visitor, T value)
         {
             Visitor<TVisitor, T>.Invoke(visitor, value);
