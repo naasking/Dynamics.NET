@@ -80,7 +80,7 @@ namespace Dynamics
             Create = type.Subtypes(typeof(MemberInfo))? null:
                      type.IsArray || type.IsValueType ? DefaultCtor:
                      type == typeof(string)           ? Expression.Lambda<Func<T>>(Expression.Constant(string.Empty)).Compile():
-                     HasEmptyConstructor(type)        ? Dynamics.Constructor<Func<T>>.Invoke:
+                     HasEmptyConstructor(type)        ? Constructor<Func<T>>.Invoke:
                                                         () => (T)FormatterServices.GetUninitializedObject(type);
 
             // Immutable: any types decorated with [Pure] || T has init-only fields whose types are immutable
