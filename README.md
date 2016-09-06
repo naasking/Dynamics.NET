@@ -3,16 +3,16 @@
 Extensions for efficient runtime reflection and structural induction.
 The following features are provided out of the box:
 
- * generic deep copying: Type<T>.Copy(T value)
- * type mutability heuristics: Type<T>.Mutability and Type<T>.IsMutable(value)
- * precise type recursion checks: Type<T>.Cycles == Cycles.Yes
+ * generic deep copying: Type&lt;T&gt;.Copy(T value)
+ * type mutability heuristics: Type&lt;T&gt;.Mutability and Type&lt;T&gt;IsMutable(value)
+ * precise type recursion checks: Type&lt;T&gt;.Cycles == Cycles.Yes
  * identifying fields and properties that are compiler-generated
- * simple checks for attributes on members, ie. type.Has<SerializableAttribute>()
+ * simple checks for attributes on members, ie. type.Has&lt;SerializableAttribute&gt;()
  * extracting the compiler-generated fields for auto properties
  * analyzing nested generic types
  * simplified .NET types with kinding via Dynamics.Kind
  * identify and invoke constructors via Constructor<TDelegate>.Invoke() ie.
-   call "new List<T>(count)" as Constructor<Func<int, List<T>>>.Invoke(count)
+   call "new List&lt;T&gt;(count)" as Constructor&lt;Func&lt;int, List&lt;T&gt;&gt;&gt;.Invoke(count)
  * and more!
 
 These are functions that are useful for serialization, runtime type
@@ -57,7 +57,7 @@ No copies are created for immutable types. Your type can participate in
 deep copying by implementing ICopiable&lt;T&gt;.
 
 Alternately, you can also manually override the copy function via
-Type<T>.OverrideCopy method if you're not able to modify an existing
+Type&lt;T&gt;.OverrideCopy method if you're not able to modify an existing
 type.
 
 ## Cycle checks
@@ -71,7 +71,7 @@ mutability.
 
 ## Generic typed constructors
 
-The Constructor<TFunc> static class accepts a delegate type TFunc
+The Constructor&lt;TFunc&gt; static class accepts a delegate type TFunc
 and exposes a delegate of that same type that can be used to create
 an instance of that type.
 
@@ -92,7 +92,7 @@ Basically, any delegate signature will work as long as the type
 implements a constructor with that signature.
 
 As a special case to use in serialization-type scenarios, there
-is also have a Type<T>.Create delegate that creates an empty type
+is also have a Type&lt;T&gt;.Create delegate that creates an empty type
 using the most efficient method available. If the type has an
 empty constructor, it uses that, otherwise it falls back on
 .NET's FormatterServices.
@@ -120,8 +120,8 @@ Analogously, "kinds" classify types. Here are roughly .NET's kinds:
 		Reference,	// managed reference, ie. by-ref parameters
 	}
 
-Arrays are technically also their own kind in .NET, but I handle
-them as simply another generic type, like List&lt;T&gt;.
+Arrays are technically also their own kind in .NET, but they're
+handle as simply another generic type, like List&lt;T&gt;.
 
 So if you're doing any kind of computation on dynamic types,
 like program analysis, code generation, etc., then you can use
