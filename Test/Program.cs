@@ -11,6 +11,20 @@ namespace Test
 {
     class Program
     {
+        static void Main(string[] args)
+        {
+            CheckConstructors();
+            TestDelegateCreate();
+            TestBackingFields();
+            TestHasAttribute();
+            TestGetProperty();
+            CircularityTests();
+            CheckImmutable();
+            CheckMutable();
+            CheckMaybeMutable();
+            RuntimeMutable();
+            CopyTests();
+        }
         static void Assert(bool cond)
         {
             if (!cond) Debugger.Break();
@@ -25,6 +39,7 @@ namespace Test
             public T Prop { get; private set; }
             public TransitiveProp(T value) { Prop = value; }
         }
+
         #region Immutable checks
         struct ROField
         {
@@ -130,6 +145,7 @@ namespace Test
             Assert(Type<T>.Mutability == Mutability.Immutable);
         }
         #endregion
+
         #region Mutable checks
         struct MutField
         {
@@ -169,6 +185,7 @@ namespace Test
             Assert(Type<T>.Mutability == Mutability.Mutable);
         }
         #endregion
+
         #region Maybe mutable checks
         class MaybeMut
         {
@@ -188,6 +205,7 @@ namespace Test
             Assert(Type<T>.Mutability == Mutability.Maybe);
         }
         #endregion
+
         #region Runtime mutability checks
         class DefMut : MaybeMut
         {
@@ -329,7 +347,11 @@ namespace Test
             Assert(x.Length == 89);
             var s = Constructor<Func<char[], string>>.Invoke(new[] { 'h', 'e', 'l', 'l', 'o' });
             Assert(s == "hello");
-            // following works, but breaks the debugger on the error thrown
+            Assert(Constructor<Func<char[], string>>.Info != null);
+            var a = Constructor<Func<int, char[]>>.Invoke(3);
+            Assert(a.Length == 3);
+            Assert(Constructor<Func<int, char[]>>.Info == null);
+            // the following correct throws an error, but breaks the debugger on the error thrown
             //try
             //{
             //    var impossible = Constructor<Func<int[]>>.Invoke();
@@ -341,15 +363,55 @@ namespace Test
         }
         #endregion
 
-        static void Main(string[] args)
+        #region Runtime tests
+        static void TestDelegateCreate()
         {
-            CheckConstructors();
-            CircularityTests();
-            CheckImmutable();
-            CheckMutable();
-            CheckMaybeMutable();
-            RuntimeMutable();
-            CopyTests();
+            var x = new Action(TestDelegateCreate);
+            var y = x.Method.Create<Action>();
+            Assert(y != null);
+            try
+            {
+                x.Method.Create<Func<int>>();
+            }
+            catch (ArgumentException)
+            {
+            }
         }
+        class NoAutoField
+        {
+            int x;
+            public int X { get { return x; } }
+        }
+        static void TestBackingFields()
+        {
+            var field = typeof(ROProperty).GetFields(BindingFlags.NonPublic | BindingFlags.Instance)[0];
+            var prop = typeof(ROProperty).GetProperty(nameof(ROProperty.X));
+            var inferred = prop.GetBackingField();
+            Assert(field != null);
+            Assert(prop != null);
+            Assert(inferred == field);
+            Assert(field.IsBackingField());
+            Assert(prop.HasAutoField());
+            Assert(field.FieldName() == "X");
+
+            var noauto = typeof(NoAutoField).GetProperty(nameof(NoAutoField.X));
+            Assert(!noauto.HasAutoField());
+            Assert(noauto.GetBackingField() == null);
+        }
+        static void TestHasAttribute()
+        {
+            Assert(typeof(PureType).Has<System.Diagnostics.Contracts.PureAttribute>());
+            var prop = typeof(PureImpureMethod).GetProperty(nameof(PureImpureMethod.X));
+            Assert(prop.Has<System.Diagnostics.Contracts.PureAttribute>());
+        }
+        static void TestGetProperty()
+        {
+            var prop = typeof(PureImpureMethod).GetProperty(nameof(PureImpureMethod.X));
+            var getter = prop.GetGetMethod();
+            var indirect = getter.GetProperty();
+            Assert(prop != null);
+            Assert(prop == indirect);
+        }
+        #endregion
     }
 }
