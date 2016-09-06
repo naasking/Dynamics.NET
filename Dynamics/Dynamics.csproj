@@ -37,7 +37,7 @@
     <Compile Include="Constructor.cs" />
     <Compile Include="Copying.cs" />
     <Compile Include="Cycles.cs" />
-    <Compile Include="IDispatcher.cs" />
+    <Compile Include="IDynamicType.cs" />
     <Compile Include="ICopiable.cs" />
     <Compile Include="Kind.cs" />
     <Compile Include="Mutability.cs" />

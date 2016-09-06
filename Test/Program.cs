@@ -416,12 +416,12 @@ namespace Test
         #endregion
 
         #region Dynamic dispatch tests
-        struct Dispatcher : IDispatcher
+        struct Dispatcher : IDynamicType
         {
-            public Type Type;
-            public void Case<T>()
+            public Type Extracted;
+            public void Type<T>()
             {
-                Type = typeof(T);
+                Extracted = typeof(T);
             }
         }
         static void TestDynamicDispatch()
@@ -434,7 +434,7 @@ namespace Test
         {
             var dispatcher = new Dispatcher();
             Runtime.GetType(ref dispatcher, typeof(T));
-            Assert(dispatcher.Type == typeof(T));
+            Assert(dispatcher.Extracted == typeof(T));
         }
         #endregion
     }

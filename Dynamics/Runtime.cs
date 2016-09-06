@@ -530,7 +530,7 @@ namespace Dynamics
         /// <param name="dispatch">The dispatcher.</param>
         /// <param name="type">The dynamic type.</param>
         public static void GetType<T>(ref T dispatch, Type type)
-            where T : struct, IDispatcher
+            where T : struct, IDynamicType
         {
             Dispatcher x;
             if (!entries.TryGetValue(type, out x))
@@ -547,13 +547,13 @@ namespace Dynamics
         abstract class Dispatcher
         {
             public abstract void Dispatch<TDispatch>(ref TDispatch handler)
-                where TDispatch : struct, IDispatcher;
+                where TDispatch : struct, IDynamicType;
         }
         sealed class Case<T> : Dispatcher
         {
             public override void Dispatch<TDispatch>(ref TDispatch dispatch)
             {
-                dispatch.Case<T>();
+                dispatch.Type<T>();
             }
         }
         #endregion
