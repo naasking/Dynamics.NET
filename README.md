@@ -54,24 +54,26 @@ Deep copying is as simple as:
     var copy = Type<T>.Copy(value);
 
 No copies are created for immutable types. Your type can participate in
-deep copying by implementined ICopiable<T>.
+deep copying by implementing ICopiable<T>.
 
 Alternately, you can also manually override the copy function via
-Type<T>.OverrideCopy method, but only do this if you know what you're doing.
+Type<T>.OverrideCopy method if you're not able to modify an existing
+type.
 
 ## Cycle checks
 
 Similar to mutability, this checks whether an object graph is cyclic
 or acyclic. This is sometimes useful for more efficient object graph
-traversal, so we may not need to mark nodes we've visited.
+traversal, to avoid the need to mark nodes that have been visited.
 
-There is no runtime-equivalent of this method.
+There is no runtime-equivalent of this method as there is with
+mutability.
 
 ## Generic typed constructors
 
-The Constructor<TFunc> static class accepts a delegate type and
-exposes a delegate of that same type that can be used to create
-an instance of that value.
+The Constructor<TFunc> static class accepts a delegate type TFunc
+and exposes a delegate of that same type that can be used to create
+an instance of that type.
 
 For instance, arrays have pseudo-constructors that accept a length
 and return an array of that length. So you can obtain a delegate
@@ -80,7 +82,8 @@ to create arrays like so:
     var createArray = Constructor<Func<int, T[]>>.Invoke;
 	var newArray = createArray(100); // 100 item array
 
-Or here's the constructor to build strings from char[]:
+Or here's how the constructor to build strings from char[] is
+obtained:
 
     var createString = Constructor<Func<char[], string>>.Invoke;
 	var hello = createString(new[] { 'h', 'e', 'l', 'l', 'o'});
@@ -88,8 +91,8 @@ Or here's the constructor to build strings from char[]:
 Basically, any delegate signature will work as long as the type
 implements a constructor with that signature.
 
-As a special case to use in serialization-type scenarios, you
-also have a Type<T>.Create delegate that creates an empty type
+As a special case to use in serialization-type scenarios, there
+is also have a Type<T>.Create delegate that creates an empty type
 using the most efficient method available. If the type has an
 empty constructor, it uses that, otherwise it falls back on
 .NET's FormatterServices.
@@ -102,19 +105,19 @@ these features aren't organized uniformly, so you have to know all
 of the various corner cases and which properties and methods on
 System.Type that you need to consult.
 
-Fortunately, there's a simpler way from type system literature.
-Types classify values, in that a value always belongs to some 
-"equivalence class" of other values. Analogously, "kinds" classify
-types. Here are roughly .NET's kinds:
+Fortunately, there's a simpler organization from type system
+literature. Types classify values, in that a value always belongs
+to some "equivalence class" of other values which we call a "type".
+Analogously, "kinds" classify types. Here are roughly .NET's kinds:
 
     public enum Kind
 	{
-		Parameter,	// a type parameter
-		Type,		// a simple non-generic type
-		Application,// a type application, ie. List<int>
-		Definition, // a generic type definition, ie. List<T>
-		Pointer,	// a pointer type
-		Reference,	// a managed reference, ie. by-ref parameters
+		Parameter,	// type parameter
+		Type,		// simple non-generic type
+		Application,// type application, ie. List<int>
+		Definition, // generic type definition, ie. List<T>
+		Pointer,	// umanaged pointer type
+		Reference,	// managed reference, ie. by-ref parameters
 	}
 
 Arrays are technically also their own kind in .NET, but I handle
@@ -147,7 +150,12 @@ overloads to construct types of the needed kinds:
 	// construct an array type: intArray == typeof(int[])
 	var intArray = Kind.Definition.Apply(typeof(Array), typeof(int));
 
-## Miscellaneous reflection
+Type construction and deconstruction is now much more uniform
+and sensible. A future enhancement will add simple unification
+as an example of how much simpler this organization is, and will
+make working with type parameters much simpler.
+
+## Miscellaneous reflection extensions
 
 Some utility extension methods are also available:
 
