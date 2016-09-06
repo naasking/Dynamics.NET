@@ -102,12 +102,14 @@ namespace Dynamics
                 : new ReadOnlyCollection<T>(source.Select(x => Type<T>.Copy(x, refs)).ToList());
         }
 
+        //FIXME: add other collection types?
+
         public static T Delegate<T>(T source, Dictionary<object, object> refs)
             where T : class
         {
             //FIXME: I think this works only for non-circular delegates, ie. target could have back ref to this delegate
             var del = (Delegate)(object)source;
-            var copy = (T)(object)System.Delegate.CreateDelegate(typeof(T), Type<object>.Copy(del.Target), del.Method);
+            var copy = (T)(object)System.Delegate.CreateDelegate(typeof(T), Type<object>.Copy(del.Target, refs), del.Method);
             refs[source] = copy;
             return copy;
         }
