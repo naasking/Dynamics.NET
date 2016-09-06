@@ -278,6 +278,13 @@ namespace Test
             },
             Enumerable.SequenceEqual);
             IsCopied(new Action(CopyTests), (x, y) => x.Method == y.Method && x.Target == y.Target);
+
+            // check circular delegates
+            Action tst = null;
+            tst = () => Console.WriteLine(tst.GetHashCode());
+            Console.Write("Try delegate: ");
+            tst();
+            IsCopied(tst, (x, y) => x != y && x.Target != y.Target);
         }
         static void IsShared<T>(T orig)
         {
