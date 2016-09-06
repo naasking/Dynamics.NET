@@ -152,9 +152,9 @@ Analogously, "kinds" classify types. Here are roughly .NET's kinds:
 	}
 
 Arrays are technically also their own kind in .NET, but they're
-handle as simply another generic type, like List&lt;T&gt;.
+handled as any other generic type, like List&lt;T&gt;.
 
-So if you're doing any kind of computation on dynamic types,
+So if you're doing any kind of computation on System.Type,
 like program analysis, code generation, etc., then you can use
 the set of System.Type.Kind() extension method overloads to
 extract the kinds, and the Dynamics.Kind.Apply(System.Type)
