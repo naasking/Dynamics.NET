@@ -41,9 +41,9 @@ Here's a sample from the test suite:
     Visitor<IVisitor>.Invoke(v, "hello world!");
 	Visitor<IVisitor>.Invoke(v, default(DateTimeKind));
 
-When the most specific method in the is exactly the type being passed in,
-dispatch costs only a single virtual call, so it's even faster than
-the regular double-dispatching visitor pattern.
+When the most specific method in the visitor is exactly the type being
+passed in, dispatch costs only a single virtual call, so it's even faster
+than the usual double-dispatching visitor pattern.
 
 For catch-all cases, like Else(object y), some code is generated that
 invokes the most specific method for the runtime type, amounting to
