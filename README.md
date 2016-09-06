@@ -54,7 +54,7 @@ Deep copying is as simple as:
     var copy = Type<T>.Copy(value);
 
 No copies are created for immutable types. Your type can participate in
-deep copying by implementing ICopiable<T>.
+deep copying by implementing ICopiable&lt;T&gt;.
 
 Alternately, you can also manually override the copy function via
 Type<T>.OverrideCopy method if you're not able to modify an existing
