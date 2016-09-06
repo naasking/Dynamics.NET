@@ -17,4 +17,8 @@
       <frameworkAssembly assemblyName="System.Core" targetFramework="" />
     </frameworkAssemblies>
   </metadata>
+  <files>
+    <file src="..\Dynamics\bin\Release\*.dll" target="lib\net40" />
+    <file src="..\Dynamics\bin\Release\*.xml" target="lib\net40" />
+  </files>
 </package>
