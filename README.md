@@ -119,13 +119,13 @@ types. Here are roughly .NET's kinds:
 	}
 
 Arrays are technically also their own kind in .NET, but I handle
-them as simply another generic type, like List<T>.
+them as simply another generic type, like List&lt;T&gt;.
 
 So if you're doing any kind of computation on dynamic types,
 like program analysis, code generation, etc., then you can use
 the set of System.Type.Kind() extension method overloads to
-extract the kinds, and the System.Type.Apply() overloads to
-construct types of the needed kinds:
+extract the kinds, and the Dynamics.Kind.Apply(System.Type)
+overloads to construct types of the needed kinds:
 
     var simpleType = typeof(int).Kind();	// Type
 	var typeapp = typeof(List<int>).Kind();	// Application
