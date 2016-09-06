@@ -40,10 +40,9 @@ via any runtime instance. If a type is mutable, then mutation will be
 visible given any instance.
 
 If a type is Mutability.Maybe, then whether mutation is visible depends
-on runtime data. You can determine with it's visible for certain by 
-calling:
+on runtime data. You can determine whether mutability for certain via:
 
-    bool isMutable = Type<T>.IsMutable(value);
+    bool isMutable = Type<T>.IsMutable(instance);
 
 This efficiently checks the runtime data of the instance to see if any
 of it permits mutation.
