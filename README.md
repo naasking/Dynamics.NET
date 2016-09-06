@@ -101,8 +101,10 @@ mutability.
 
 ## Generic typed constructors
 
-The Constructor&lt;TFunc&gt; static class accepts a delegate type TFunc
-and exposes a TFunc instance creates instance of TFunc's return type.
+The Constructor&lt;TFunc&gt; static class exposes an efficient way to
+construct instances of given types. The type TFunc is a delegate
+whose signature matches the constructor you wish to invoke, and it
+creates instances of the delegate's return type.
 
 For instance, arrays have pseudo-constructors that accept a length
 and return an array of that length. So you can obtain a delegate
