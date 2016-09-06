@@ -99,9 +99,9 @@ empty constructor, it uses that, otherwise it falls back on
 
 .NET has a bit of a weird type system with a mix of first-class
 and second-class types that fit awkwardly together. What's worse,
-these features aren't organized uniformly, so you have to know a
-all the various corner cases and which properties and methods on
-System.Type that you need to check.
+these features aren't organized uniformly, so you have to know all
+of the various corner cases and which properties and methods on
+System.Type that you need to consult.
 
 Fortunately, there's a simpler way from type system literature.
 Types classify values, in that a value always belongs to some 
