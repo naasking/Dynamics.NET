@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using System.Linq;
-using System.Text;
 using System.Diagnostics.Contracts;
 
 namespace Dynamics
@@ -522,5 +519,42 @@ namespace Dynamics
                 throw new ArgumentException("Type " + type.Name + " is not a delegate type.");
             return (T)(object)Delegate.CreateDelegate(type, null, method, true);
         }
+
+        #region Dynamic type resolver
+        static readonly ConcurrentDictionary<Type, Dispatcher> entries = new ConcurrentDictionary<Type, Dispatcher>();
+
+        /// <summary>
+        /// Resolve a dynamic type to a type variable.
+        /// </summary>
+        /// <typeparam name="T">The dispatcher type.</typeparam>
+        /// <param name="dispatch">The dispatcher.</param>
+        /// <param name="type">The dynamic type.</param>
+        public static void Resolve<T>(ref T dispatch, Type type)
+            where T : struct, IDispatcher
+        {
+            Dispatcher x;
+            if (!entries.TryGetValue(type, out x))
+            {
+                x = (Dispatcher)typeof(Case<>)
+                    .MakeGenericType(type)
+                    .GetConstructor(Type.EmptyTypes)
+                    .Invoke(null);
+                entries.TryAdd(type, x);
+            }
+            x.Dispatch(ref dispatch);
+        }
+        abstract class Dispatcher
+        {
+            public abstract void Dispatch<TDispatch>(ref TDispatch handler)
+                where TDispatch : struct, IDispatcher;
+        }
+        sealed class Case<T> : Dispatcher
+        {
+            public override void Dispatch<TDispatch>(ref TDispatch dispatch)
+            {
+                dispatch.Case<T>();
+            }
+        }
+        #endregion
     }
 }

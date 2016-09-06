@@ -18,6 +18,7 @@ namespace Test
             TestBackingFields();
             TestHasAttribute();
             TestGetProperty();
+            TestDynamicDispatch();
             CircularityTests();
             CheckImmutable();
             CheckMutable();
@@ -411,6 +412,29 @@ namespace Test
             var indirect = getter.GetProperty();
             Assert(prop != null);
             Assert(prop == indirect);
+        }
+        #endregion
+
+        #region Dynamic dispatch tests
+        struct Dispatcher : IDispatcher
+        {
+            public Type Type;
+            public void Case<T>()
+            {
+                Type = typeof(T);
+            }
+        }
+        static void TestDynamicDispatch()
+        {
+            DispatchMatch<int>();
+            DispatchMatch<object>();
+            DispatchMatch<Action>();
+        }
+        static void DispatchMatch<T>()
+        {
+            var dispatcher = new Dispatcher();
+            Runtime.Resolve(ref dispatcher, typeof(T));
+            Assert(dispatcher.Type == typeof(T));
         }
         #endregion
     }
