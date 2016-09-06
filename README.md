@@ -148,6 +148,25 @@ overloads to construct types of the needed kinds:
 	// construct an array type: intArray == typeof(int[])
 	var intArray = Kind.Definition.Apply(typeof(Array), typeof(int));
 
+## Miscellaneous reflection
+
+Some utility extension methods are also available:
+
+    // true if type x inherits from T
+    Type x = ...;
+	bool isSubtype = x.Subtypes(typeof(T)) || x.Subtypes<T>();
+
+	// true if 'field' is an auto-generated backing field for a property
+	FieldInfo field = ...;
+	bool isBackingField = field.IsBackingField();
+	PropertyInfo prop = field.GetProperty();
+	FieldInfo roundtrip = prop.GetBackingField();
+	// roundtrip == field
+
+	// return a human-readable field name (auto-generated backing fields
+	// have unreadable names)
+	string readableName = field.FieldName();
+
 # Status
 
 I'll say alpha quality for now. I've used some of this code in
