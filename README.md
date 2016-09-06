@@ -4,7 +4,7 @@ Extensions for efficient runtime reflection and structural induction.
 The following features are provided out of the box:
 
  * generic deep copying: Type&lt;T&gt;.Copy(T value)
- * type mutability heuristics: Type&lt;T&gt;.Mutability and Type&lt;T&gt;IsMutable(value)
+ * type mutability heuristics: Type&lt;T&gt;.Mutability and Type&lt;T&gt;.IsMutable(T value)
  * precise type recursion checks: Type&lt;T&gt;.Cycles == Cycles.Yes
  * identifying fields and properties that are compiler-generated
  * simple checks for attributes on members, ie. type.Has&lt;SerializableAttribute&gt;()
@@ -21,6 +21,36 @@ analysis is useful.
 
 The functions are provided in as efficient a form as is possible,
 typically as statically cached delegates.
+
+## Generic visitors
+
+Never write double-dispatching logic ever again, and write visitors that
+can match on types which you can't modify, like System.Int32!
+
+Here's a sample from the test suite:
+
+    interface IVisitor
+    {
+        void Int(int x);
+        void String(string x);
+        void Else(object y);
+    }
+	...
+	var v = new IVisitorImplementation();
+    Visitor<IVisitor>.Invoke(v, 399);
+    Visitor<IVisitor>.Invoke(v, "hello world!");
+	Visitor<IVisitor>.Invoke(v, default(DateTimeKind));
+
+When the most specific method in the is exactly the type being passed in,
+dispatch costs only a single virtual call, so it's even faster than
+the regular double-dispatching visitor pattern.
+
+For catch-all cases, like Else(object y), some code is generated that
+invokes the most specific method for the runtime type, amounting to
+a small set of tests and casts.
+
+The only limitations right now are visitor methods with generic
+parameters, which will be integrated into a future update.
 
 ## Mutability analysis
 
@@ -157,7 +187,7 @@ make working with type parameters much simpler.
 
 ## Miscellaneous reflection extensions
 
-Some utility extension methods are also available:
+Some extension methods for reflection are also available:
 
     // true if type x inherits from T
     Type x = ...;
@@ -170,8 +200,7 @@ Some utility extension methods are also available:
 	FieldInfo roundtrip = prop.GetBackingField();
 	// roundtrip == field
 
-	// return a human-readable field name (auto-generated backing fields
-	// have unreadable names)
+	// return a human-readable field name (auto-generated backing fields are unreadable)
 	string readableName = field.FieldName();
 
 # Status

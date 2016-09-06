@@ -25,6 +25,7 @@ namespace Test
             CheckMaybeMutable();
             RuntimeMutable();
             CopyTests();
+            TestVisitor();
         }
         static void Assert(bool cond)
         {
@@ -435,6 +436,42 @@ namespace Test
             var dispatcher = new Dispatcher();
             Runtime.GetType(ref dispatcher, typeof(T));
             Assert(dispatcher.Extracted == typeof(T));
+        }
+        #endregion
+
+        #region Generic visitor
+        interface IVisitor
+        {
+            void Int(int x);
+            void String(string x);
+            void Else(object y);
+        }
+        sealed class Visitor : IVisitor
+        {
+            public void Int(int x)
+            {
+                Assert(x == 399);
+            }
+            public void String(string x)
+            {
+                Assert(x == "hello world!");
+            }
+            public void Else(object y)
+            {
+                Assert(y.GetType() == typeof(DateTimeKind));
+            }
+        }
+        static void TestVisitor()
+        {
+            Assert(Visitor<IVisitor, int>.Invoke != null);
+            Assert(Visitor<IVisitor, string>.Invoke != null);
+            Assert(Visitor<IVisitor, object>.Invoke != null);
+            Assert(Visitor<IVisitor, Enum>.Invoke != null);
+
+            var v = new Visitor();
+            Visitor<IVisitor>.Invoke(v, 399);
+            Visitor<IVisitor>.Invoke(v, "hello world!");
+            Visitor<IVisitor>.Invoke(v, default(DateTimeKind));
         }
         #endregion
     }
