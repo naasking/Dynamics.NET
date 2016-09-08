@@ -128,7 +128,7 @@ namespace Dynamics
                     var dispatch = new Func<T, Dictionary<object, object>, T>(DispatchCopy<T>).Method
                                    .GetGenericMethodDefinition()
                                    .MakeGenericMethod(type);
-                    f = subtypeCopy[type] = (Func<T, Dictionary<object, object>, T>)Delegate.CreateDelegate(typeof(Func<T, Dictionary<object, object>, T>), dispatch);
+                    f = subtypeCopy[type] = dispatch.Create<Func<T, Dictionary<object, object>, T>>();
                 }
                 return f(value, refs);
             }
