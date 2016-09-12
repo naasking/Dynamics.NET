@@ -73,7 +73,7 @@ namespace Dynamics
             // else if it's an array or struct, then simply return default(T)
             create = type.Subtypes(typeof(MemberInfo))   ? null:
                      type.IsArray || type.IsValueType    ? DefaultCtor:
-                     type.IsInterface || type.IsAbstract ? () => { throw new NotSupportedException("Cannot instantiate abstract type " + type.Name); }:
+                     type.IsInterface || type.IsAbstract ? null:
                      type == typeof(string)              ? Expression.Lambda<Func<T>>(Expression.Constant(string.Empty)).Compile():
                      HasEmptyConstructor(type)           ? Constructor<Func<T>>.Invoke:
                                                            () => (T)FormatterServices.GetUninitializedObject(type);
