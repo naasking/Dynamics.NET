@@ -19,13 +19,7 @@ namespace Dynamics
     [Pure]
     public static class Type<T>
     {
-        /// <summary>
-        /// Empty constructor for <typeparamref name="T"/>.
-        /// </summary>
-        /// <remarks>
-        /// This may throw a SecurityException if <typeparamref name="T"/> has no empty constructor and isn't a struct.
-        /// </remarks>
-        public static readonly Func<T> Create;
+        static Func<T> create;
 
         /// <summary>
         /// Exposes the conservative mutability of <typeparamref name="T"/>.
@@ -77,11 +71,12 @@ namespace Dynamics
             var type = typeof(T);
             // initialize the default constructor: if T:new(), then invoke the parameterless constructor
             // else if it's an array or struct, then simply return default(T)
-            Create = type.Subtypes(typeof(MemberInfo))? null:
-                     type.IsArray || type.IsValueType ? DefaultCtor:
-                     type == typeof(string)           ? Expression.Lambda<Func<T>>(Expression.Constant(string.Empty)).Compile():
-                     HasEmptyConstructor(type)        ? Constructor<Func<T>>.Invoke:
-                                                        () => (T)FormatterServices.GetUninitializedObject(type);
+            create = type.Subtypes(typeof(MemberInfo))   ? null:
+                     type.IsArray || type.IsValueType    ? DefaultCtor:
+                     type.IsInterface || type.IsAbstract ? () => { throw new NotSupportedException("Cannot instantiate abstract type " + type.Name); }:
+                     type == typeof(string)              ? Expression.Lambda<Func<T>>(Expression.Constant(string.Empty)).Compile():
+                     HasEmptyConstructor(type)           ? Constructor<Func<T>>.Invoke:
+                                                           () => (T)FormatterServices.GetUninitializedObject(type);
 
             // Immutable: any types decorated with [Pure] || T has init-only fields whose types are immutable
             // Maybe: if any fields have types with Mutability.Maybe
@@ -95,6 +90,17 @@ namespace Dynamics
             Cycles = DetectCycles(type, ref visited, 0);
             
             deepCopy = Mutability == Mutability.Immutable ? null : GenerateCopy(type);
+        }
+
+        /// <summary>
+        /// Empty constructor for <typeparamref name="T"/>.
+        /// </summary>
+        /// <remarks>
+        /// This may throw a SecurityException if <typeparamref name="T"/> has no empty constructor and isn't a struct.
+        /// </remarks>
+        public static Func<T> Create
+        {
+            get { return create; }
         }
 
         /// <summary>
@@ -149,6 +155,15 @@ namespace Dynamics
         public static void OverrideCopy(Func<T, Dictionary<object, object>, T> copy)
         {
             deepCopy = copy;
+        }
+
+        /// <summary>
+        /// Override the default empty constructor.
+        /// </summary>
+        /// <param name="create">The delegate that overrides empty constructor.</param>
+        public static void OverrideCreate(Func<T> create)
+        {
+            Type<T>.create = create;
         }
 
         /// <summary>
