@@ -50,8 +50,9 @@ namespace Dynamics
             //NOTE: instance methods don't expose the 'this' type as a param, but static methods do, so this treats
             //static and instance methods differently as a result
             var matches = methods.Select(x => new { Method = x, Params = x.GetParameters() })
-                                 .Where(x => x.Method.IsStatic && x.Params.Length == 2 && (x.Params[typeParam].ParameterType.Subtypes(type) || type.Subtypes(x.Params[typeParam].ParameterType))
-                                          || !x.Method.IsStatic && x.Params.Length == 1 && (x.Params[0].ParameterType.Subtypes(type) || type.Subtypes(x.Params[0].ParameterType)))
+                                 .Where(x => x.Method.ReturnType.Subtypes(invoke.ReturnType)
+                                          && (x.Method.IsStatic && x.Params.Length == 2 && (x.Params[typeParam].ParameterType.Subtypes(type) || type.Subtypes(x.Params[typeParam].ParameterType))
+                                          || !x.Method.IsStatic && x.Params.Length == 1 && (x.Params[0].ParameterType.Subtypes(type) || type.Subtypes(x.Params[0].ParameterType))))
                                  .OrderBy(x => x.Params[typeParam].ParameterType, new SubtypeComparer())
                                  .ToArray();
             if (matches.Length == 0 || !type.Subtypes(matches.Last().Params[typeParam].ParameterType))
@@ -68,6 +69,7 @@ namespace Dynamics
             // else construct an expression that tests the runtime type
             var v = Expression.Parameter(tvisit, "v");
             var p = Expression.Parameter(type, "p");
+            var _r = invoke.ReturnType == typeof(void) ? null : Expression.Variable(invoke.ReturnType, "_r");
             var exit = Expression.Label("exit");
             var localType = Expression.Variable(typeof(Type), "type");
             var tests = new List<Expression>
@@ -84,7 +86,8 @@ namespace Dynamics
                 // if runtime type matches parameter type, then cast and invoke match, then exit
                 var typeCheck = Expression.Equal(localType, Expression.Constant(x.Params[typeParam].ParameterType));
                 var dispatch = Expression.Call(v, x.Method, Expression.Convert(p, x.Params[typeParam].ParameterType));
-                tests.Add(Expression.IfThen(typeCheck, Expression.Return(exit, dispatch)));
+                var matched = _r == null ? dispatch as Expression : Expression.Assign(_r, dispatch);
+                tests.Add(Expression.IfThen(typeCheck, Expression.Return(exit, matched)));
             }
             // this is the last match, where type <: parameter type, so we just invoke the most specific case
             var final = matches[i];
@@ -94,7 +97,9 @@ namespace Dynamics
             //generic parameter.
             tests.Add(Expression.Call(v, final.Method, Expression.Convert(p, final.Params[typeParam].ParameterType)));
             tests.Add(Expression.Label(exit));
-            var body = Expression.Block(new[] { localType }, tests);
+            if (_r != null) tests.Add(_r);
+            var locals = _r == null ? new[] { localType } : new[] { localType, _r };
+            var body = Expression.Block(locals, tests);
             return Expression.Lambda<TFunc>(body, v, p)
                              .Compile();
         }

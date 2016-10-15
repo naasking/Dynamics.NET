@@ -488,6 +488,9 @@ namespace Test
             AppendOverload<string>.Invoke(buf, "foo");
             Assert(buf.ToString() == "foo");
             buf.Clear();
+            AppendOverload<object>.Invoke(buf, 99);
+            Assert(buf.ToString() == "99");
+            buf.Clear();
         }
         static class Parse<T>
         {

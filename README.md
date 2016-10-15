@@ -54,21 +54,23 @@ parameters, which will be integrated into a future update.
 
 ## Resolve Most-Specific Method as a Delegate
 
-Generic visitors are based on the static Method class, which can be used
-to reify an static or instance method as a delegate. For instance, the
-generic visitors are simply defined as:
+The Dynamics.Method class lets you easily reify a static or instance
+method as a delegate. For instance, the generic visitors are simply
+defined as:
 
     public static class Visitor<TVisitor, T>
         where TVisitor : class
     {
-        public static readonly Action<TVisitor, T> Invoke = Method.Resolve<Action<TVisitor, T>>();
+        public static readonly Action<TVisitor, T> Invoke =
+			Method.Resolve<Action<TVisitor, T>>();
     }
 
 Or here's a class that caches a delegate for TryParse overloads:
 
     static class Parse<T>
     {
-        public static readonly TryParse<T> TryParse = Method.Resolve<TryParse<T>>();
+        public static readonly TryParse<T> TryParse =
+			Method.Resolve<TryParse<T>>();
     }
 	...
 	int i;
@@ -77,14 +79,17 @@ Or here's a class that caches a delegate for TryParse overloads:
 
 I've found these patterns particularly useful when writing heavily
 generic code, where you know the type T you're working with has, say,
-has a TryParse method but it's absurdly difficult to make use of it.
-Or if you're generating a a large string using StringBuilder, and can
-invoke the most specific, and most efficient Append overload by
-defining the following:
+a TryParse method but it's absurdly difficult to make use of it.
+
+One example that's come up frequently is re generating a large
+string using StringBuilder, which has efficient overloads defined
+for a large number of types. You can invoke the most efficient
+Append overload as follows:
 
     static class Append<T>
     {
-        public static readonly Func<StringBuilder, T, StringBuilder> Invoke = Method.Resolve<Func<StringBuilder, T, StringBuilder>>("Append");
+        public static readonly Func<StringBuilder, T, StringBuilder> Invoke =
+			Method.Resolve<Func<StringBuilder, T, StringBuilder>>("Append");
     }
 	...
 	StringBuilder buf = ...;
