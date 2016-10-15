@@ -22,7 +22,7 @@ analysis is useful.
 The functions are provided in as efficient a form as is possible,
 typically as statically cached delegates.
 
-## Generic visitors
+## Generic Visitors
 
 Never write double-dispatching logic ever again, and write visitors that
 can match on types which you can't modify, like System.Int32!
@@ -52,7 +52,50 @@ a small set of tests and casts.
 The only limitations right now are visitor methods with generic
 parameters, which will be integrated into a future update.
 
-## Mutability analysis
+## Resolve Most-Specific Method as a Delegate
+
+Generic visitors are based on the static Method class, which can be used
+to reify an static or instance method as a delegate. For instance, the
+generic visitors are simply defined as:
+
+    public static class Visitor<TVisitor, T>
+        where TVisitor : class
+    {
+        public static readonly Action<TVisitor, T> Invoke = Method.Resolve<Action<TVisitor, T>>();
+    }
+
+Or here's a class that caches a delegate for TryParse overloads:
+
+    static class Parse<T>
+    {
+        public static readonly TryParse<T> TryParse = Method.Resolve<TryParse<T>>();
+    }
+	...
+	int i;
+	if (!Parse<int>.TryParse("1234", out i))
+		...
+
+I've found these patterns particularly useful when writing heavily
+generic code, where you know the type T you're working with has, say,
+has a TryParse method but it's absurdly difficult to make use of it.
+Or if you're generating a a large string using StringBuilder, and can
+invoke the most specific, and most efficient Append overload by
+defining the following:
+
+    static class Append<T>
+    {
+        public static readonly Func<StringBuilder, T, StringBuilder> Invoke = Method.Resolve<Func<StringBuilder, T, StringBuilder>>("Append");
+    }
+	...
+	StringBuilder buf = ...;
+	T somefoo;
+	Append<T>.Invoke(buf, somefoo);
+
+Method resolution is currently limited to two parameters, same as
+the visitor constraint, and TryParse is handled specially. These
+restrictions will eventually go away.
+
+## Mutability Analysis
 
 This library can perform a conservative, transitive mutability analysis on
 your type. This comes in two forms, an efficient but more conservative one
@@ -77,7 +120,7 @@ on runtime data. You can determine actual mutability for certain via:
 This efficiently checks the runtime data of the instance to see if any
 of it permits mutation.
 
-## Deep copying
+## Deep Copying
 
 Deep copying is as simple as:
 
@@ -90,7 +133,7 @@ Alternately, you can also manually override the copy function via
 Type&lt;T&gt;.OverrideCopy method if you're not able to modify an existing
 type.
 
-## Cycle checks
+## Cycle Checks
 
 Similar to mutability, this checks whether an object graph is cyclic
 or acyclic. This is sometimes useful for more efficient object graph
@@ -99,7 +142,7 @@ traversal, to avoid the need to mark nodes that have been visited.
 There is no runtime-equivalent of this method as there is with
 mutability.
 
-## Generic typed constructors
+## Generic Typed Constructors
 
 The Constructor&lt;TFunc&gt; static class exposes an efficient way to
 construct instances of given types. The type TFunc is a delegate
@@ -128,7 +171,7 @@ instance using the most efficient method available. If the type
 has an empty constructor, it uses that, otherwise it falls back
 on .NET's FormatterServices.
 
-## Kind system
+## Kind System
 
 .NET has a bit of a weird type system with a mix of first-class
 and second-class types that fit awkwardly together. What's worse,
@@ -186,7 +229,7 @@ and sensible. A future enhancement will add simple unification
 as an example of how much simpler this organization is, and will
 make working with type parameters much simpler.
 
-## Miscellaneous reflection extensions
+## Miscellaneous Reflection Extensions
 
 Some extension methods for reflection are also available:
 
