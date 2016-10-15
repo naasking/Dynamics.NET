@@ -26,6 +26,8 @@ namespace Test
             RuntimeMutable();
             CopyTests();
             TestVisitor();
+            TestStringBuilderVisitor();
+            TestMethodResolution();
         }
         static void Assert(bool cond)
         {
@@ -472,6 +474,33 @@ namespace Test
             Visitor<IVisitor>.Invoke(v, 399);
             Visitor<IVisitor>.Invoke(v, "hello world!");
             Visitor<IVisitor>.Invoke(v, default(DateTimeKind));
+        }
+        static class AppendOverload<T>
+        {
+            public static readonly Func<StringBuilder, T, StringBuilder> Invoke = Method.Resolve<Func<StringBuilder, T, StringBuilder>>("Append");
+        }
+        static void TestStringBuilderVisitor()
+        {
+            var buf = new StringBuilder();
+            AppendOverload<int>.Invoke(buf, 3);
+            Assert(buf.ToString() == "3");
+            buf.Clear();
+            AppendOverload<string>.Invoke(buf, "foo");
+            Assert(buf.ToString() == "foo");
+            buf.Clear();
+        }
+        static class Parse<T>
+        {
+            public static readonly TryParse<T> TryParse = Method.Resolve<TryParse<T>>();
+        }
+        static void TestMethodResolution()
+        {
+            int i;
+            Assert(Parse<int>.TryParse("345", out i));
+            Assert(i == 345);
+            DateTime d;
+            Assert(Parse<DateTime>.TryParse("2016-02-01", out d));
+            Assert(d == new DateTime(2016, 2, 1));
         }
         #endregion
     }
