@@ -41,7 +41,7 @@ namespace Dynamics
         {
             var tfunc = typeof(TFunc);
             if (!tfunc.Subtypes(typeof(Delegate)))
-                throw new ArgumentException("Type " + tfunc.Name + " is not a delegate type.");
+                throw new ArgumentException(tfunc.Name + " must be a delegate type.");
             var invoke = tfunc.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
             var type = invoke.ReturnType;
             if (type.IsAbstract || type.IsInterface)

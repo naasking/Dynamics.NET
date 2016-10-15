@@ -72,8 +72,8 @@ namespace Dynamics
             // initialize the default constructor: if T:new(), then invoke the parameterless constructor
             // else if it's an array or struct, then simply return default(T)
             create = type.Subtypes(typeof(MemberInfo))   ? null:
-                     type.IsArray || type.IsValueType    ? DefaultCtor:
                      type.IsInterface || type.IsAbstract ? null:
+                     type.IsArray || type.IsValueType    ? DefaultCtor:
                      type == typeof(string)              ? Expression.Lambda<Func<T>>(Expression.Constant(string.Empty)).Compile():
                      HasEmptyConstructor(type)           ? Constructor<Func<T>>.Invoke:
                                                            () => (T)FormatterServices.GetUninitializedObject(type);

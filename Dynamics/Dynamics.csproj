@@ -38,6 +38,8 @@
     <Compile Include="Constructor.cs" />
     <Compile Include="Copying.cs" />
     <Compile Include="Cycles.cs" />
+    <Compile Include="Method.cs" />
+    <Compile Include="TryParse.cs" />
     <Compile Include="Visitor.cs" />
     <Compile Include="IDynamicType.cs" />
     <Compile Include="ICopiable.cs" />
