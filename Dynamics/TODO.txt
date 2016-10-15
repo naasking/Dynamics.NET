@@ -12,36 +12,11 @@
 
 = Future Work =
 
-== Generic Visitor ==
+== Generalize Method.Resolve ==
 
-An old Sasa branch has a generic dispatch/visitor using the method
-resolution logic from the Fortress paper, "Type Checking Modular
-Multiple Dispatch with Parametric Polymorphism and Multiple
-Inheritance" [1].
-
-The idea is to free the need for visitors to be defined up front,
-thus enabling more ad-hoc extension. For instance, sets of
-unrelated types would have an equivalence class defined
-by the interface that matches on them:
-
-  interface ISomeVisitor
-  {
-    void IntCase(int i);       // match int
-    void StringCase(string s); // match strings
-    void Refs<T>(T someClass)  // match any reference type
-        where T : class;
-    void Any<T>(T x);          // match everything else
-  }
-  Match<ISomeVisitor, T>.Case(visitor, value);
-
-Match<TVisit, T>.Case is a statically cached delegate that dispatches
-right into the interface's most specific match for type T. This
-often eliminates double dispatch overhead so it would be even
-faster than the regular visitor pattern.
-
-First version will probably only support single dispatch, but
-Sasa branch supports multi-argument dispatch in theory, with
-Match<T>.Case, .Case2, .Case3, etc.
+ 1. Support any number of parameters.
+ 2. Search for candidate methods among all parameter types.
+ 3. Full parameter unification, so parameters can be by-ref
+    types, regular types, generic types, etc. [1]
 
 [1] http://lambda-the-ultimate.org/node/5322
-[2] http://higherlogics.blogspot.ca/2012/02/reusable-ad-hoc-extensions-for-net.html
