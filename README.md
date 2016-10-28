@@ -35,11 +35,11 @@ Here's a sample from the test suite:
         void String(string x);
         void Else(object y);
     }
-	...
-	var v = new IVisitorImplementation();
+    ...
+    var v = new IVisitorImplementation();
     Visitor<IVisitor>.Invoke(v, 399);
     Visitor<IVisitor>.Invoke(v, "hello world!");
-	Visitor<IVisitor>.Invoke(v, default(DateTimeKind));
+    Visitor<IVisitor>.Invoke(v, default(DateTimeKind));
 
 When the most specific method in the visitor is exactly the type being
 passed in, dispatch costs only a single virtual call, so it's even faster
@@ -72,10 +72,10 @@ Or here's a class that caches a delegate for TryParse overloads:
         public static readonly TryParse<T> TryParse =
 			Method.Resolve<TryParse<T>>();
     }
-	...
-	int i;
-	if (!Parse<int>.TryParse("1234", out i))
-		...
+    ...
+    int i;
+    if (!Parse<int>.TryParse("1234", out i))
+        ...
 
 I've found these patterns particularly useful when writing heavily
 generic code, where you know the type T you're working with has, say,
@@ -89,12 +89,12 @@ Append overload as follows:
     static class Append<T>
     {
         public static readonly Func<StringBuilder, T, StringBuilder> Invoke =
-			Method.Resolve<Func<StringBuilder, T, StringBuilder>>("Append");
+            Method.Resolve<Func<StringBuilder, T, StringBuilder>>("Append");
     }
-	...
-	StringBuilder buf = ...;
-	T somefoo;
-	Append<T>.Invoke(buf, somefoo);
+    ...
+    StringBuilder buf = ...;
+    T somefoo;
+    Append<T>.Invoke(buf, somefoo);
 
 Method resolution is currently limited to two parameters, same as
 the visitor constraint, and TryParse is handled specially. These
@@ -159,13 +159,13 @@ and return an array of that length. So you can obtain a delegate
 to create arrays like so:
 
     var createArray = Constructor<Func<int, T[]>>.Invoke;
-	var newArray = createArray(100); // 100 item array
+    var newArray = createArray(100); // 100 item array
 
 Or here's how the constructor to build strings from char[] is
 obtained:
 
     var createString = Constructor<Func<char[], string>>.Invoke;
-	var hello = createString(new[] { 'h', 'e', 'l', 'l', 'o'});
+    var hello = createString(new[] { 'h', 'e', 'l', 'l', 'o'});
 
 Basically, any delegate signature will work as long as the type
 implements a constructor with that signature.
@@ -190,14 +190,14 @@ to some "equivalence class" of other values which we call a "type".
 Analogously, "kinds" classify types. Here are roughly .NET's kinds:
 
     public enum Kind
-	{
-		Parameter,	// type parameter
-		Type,		// simple non-generic type
-		Application,// type application, ie. List<int>
-		Definition, // generic type definition, ie. List<T>
-		Pointer,	// umanaged pointer type
-		Reference,	// managed reference, ie. by-ref parameters
-	}
+    {
+        Parameter,	// type parameter
+        Type,		// simple non-generic type
+        Application,// type application, ie. List<int>
+        Definition, // generic type definition, ie. List<T>
+        Pointer,	// umanaged pointer type
+        Reference,	// managed reference, ie. by-ref parameters
+    }
 
 Arrays are technically also their own kind in .NET, but they're
 handled as any other generic type, like List&lt;T&gt;.
@@ -209,25 +209,25 @@ extract the kinds, and the Dynamics.Kind.Apply(System.Type)
 overloads to construct types of the needed kinds:
 
     var simpleType = typeof(int).Kind();	// Type
-	var typeapp = typeof(List<int>).Kind();	// Application
-	var typedef = typeof(List<>).Kind();	// Definition
-	var byref = typeof(int).MakeByRefType();// Reference
+    var typeapp = typeof(List<int>).Kind();	// Application
+    var typedef = typeof(List<>).Kind();	// Definition
+    var byref = typeof(int).MakeByRefType();// Reference
 
-	Type definition;
-	Type[] context;
-	switch(typeof(Dictionary<int, string>).Kind(out definition, out context))
-	{
-		case Kind.Application:
-			// definition == typeof(Dictionary<,>)
-			// context    == new[] { typeof(int), typeof(string) }
-			// roundtrip  == typeof(Dictionary<int, string>)
-			var roundtrip = Kind.Definition.Apply(definition, context);
-			break;
-		default:
-			throw new Exception("Impossible!");
-	}
-	// construct an array type: intArray == typeof(int[])
-	var intArray = Kind.Definition.Apply(typeof(Array), typeof(int));
+    Type definition;
+    Type[] context;
+    switch(typeof(Dictionary<int, string>).Kind(out definition, out context))
+    {
+        case Kind.Application:
+            // definition == typeof(Dictionary<,>)
+            // context    == new[] { typeof(int), typeof(string) }
+            // roundtrip  == typeof(Dictionary<int, string>)
+            var roundtrip = Kind.Definition.Apply(definition, context);
+            break;
+            default:
+                throw new Exception("Impossible!");
+     }
+    // construct an array type: intArray == typeof(int[])
+    var intArray = Kind.Definition.Apply(typeof(Array), typeof(int));
 
 Type construction and deconstruction is now much more uniform
 and sensible. A future enhancement will add simple unification
@@ -240,17 +240,17 @@ Some extension methods for reflection are also available:
 
     // true if type x inherits from T
     Type x = ...;
-	bool isSubtype = x.Subtypes(typeof(T)) || x.Subtypes<T>();
+    bool isSubtype = x.Subtypes(typeof(T)) || x.Subtypes<T>();
 
-	// true if 'field' is an auto-generated backing field for a property
-	FieldInfo field = ...;
-	bool isBackingField = field.IsBackingField();
-	PropertyInfo prop = field.GetProperty();
-	FieldInfo roundtrip = prop.GetBackingField();
-	// roundtrip == field
+    // true if 'field' is an auto-generated backing field for a property
+    FieldInfo field = ...;
+    bool isBackingField = field.IsBackingField();
+    PropertyInfo prop = field.GetProperty();
+    FieldInfo roundtrip = prop.GetBackingField();
+    // roundtrip == field
 
-	// return a human-readable field name (auto-generated backing fields are unreadable)
-	string readableName = field.FieldName();
+    // return a human-readable field name (auto-generated backing fields are unreadable)
+    string readableName = field.FieldName();
 
 # Status
 
