@@ -224,7 +224,7 @@ overloads to construct types of the needed kinds:
 			var roundtrip = Kind.Definition.Apply(definition, context);
 			break;
 		default:
-			throw new Excepetion("Impossible!");
+			throw new Exception("Impossible!");
 	}
 	// construct an array type: intArray == typeof(int[])
 	var intArray = Kind.Definition.Apply(typeof(Array), typeof(int));
