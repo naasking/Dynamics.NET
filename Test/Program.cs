@@ -28,6 +28,7 @@ namespace Test
             TestVisitor();
             TestStringBuilderVisitor();
             TestMethodResolution();
+            TestDynamicGenerics();
         }
         static void Assert(bool cond)
         {
@@ -504,6 +505,19 @@ namespace Test
             DateTime d;
             Assert(Parse<DateTime>.TryParse("2016-02-01", out d));
             Assert(d == new DateTime(2016, 2, 1));
+        }
+        #endregion
+
+        #region Generic type associations
+        static void TestDynamicGenerics()
+        {
+            var list = Type<IList<int>>.Create();
+            Assert(list != null);
+            Assert(list is List<int>);
+
+            var dict = Type<IDictionary<int, string>>.Create();
+            Assert(dict != null);
+            Assert(dict is Dictionary<int, string>);
         }
         #endregion
     }
