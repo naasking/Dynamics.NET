@@ -561,70 +561,70 @@ namespace Dynamics
             }
         }
         
-        /// <summary>
-        /// Generate a dynamic type.
-        /// </summary>
-        /// <param name="name">The type name.</param>
-        /// <param name="saveAssembly">Flag indicating whether the dynamic assembly should be saved.</param>
-        /// <param name="generate">The callback used to generate the type.</param>
-        /// <returns>The created type.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if argument is null.</exception>
-        /// <remarks>
-        /// This is a static method used to create a dynamic type in a dynamic assembly, often for
-        /// code generation purposes. It automates various steps and provides a boolean parameter
-        /// indicating whether to save the assembly to a file, so you can run verification passes on it:
-        /// <code>
-        /// var newType = Runtime.CreateType(name: "TypeFoo",
-        ///                                  saveAssembly: true,
-        ///                                  generate: typeBuilder =&gt;
-        /// {
-        ///     // see docs on TypeBuilder
-        ///     ...
-        /// });
-        /// </code>
-        /// </remarks>
-        public static Type CreateType(string name, bool saveAssembly, Action<TypeBuilder> generate)
-        {
-            return CreateType(name, TypeAttributes.Class | TypeAttributes.Public, saveAssembly, generate);
-        }
+        ///// <summary>
+        ///// Generate a dynamic type.
+        ///// </summary>
+        ///// <param name="name">The type name.</param>
+        ///// <param name="saveAssembly">Flag indicating whether the dynamic assembly should be saved.</param>
+        ///// <param name="generate">The callback used to generate the type.</param>
+        ///// <returns>The created type.</returns>
+        ///// <exception cref="ArgumentNullException">Thrown if argument is null.</exception>
+        ///// <remarks>
+        ///// This is a static method used to create a dynamic type in a dynamic assembly, often for
+        ///// code generation purposes. It automates various steps and provides a boolean parameter
+        ///// indicating whether to save the assembly to a file, so you can run verification passes on it:
+        ///// <code>
+        ///// var newType = Runtime.CreateType(name: "TypeFoo",
+        /////                                  saveAssembly: true,
+        /////                                  generate: typeBuilder =&gt;
+        ///// {
+        /////     // see docs on TypeBuilder
+        /////     ...
+        ///// });
+        ///// </code>
+        ///// </remarks>
+        //public static Type CreateType(string name, bool saveAssembly, Action<TypeBuilder> generate)
+        //{
+        //    return CreateType(name, TypeAttributes.Class | TypeAttributes.Public, saveAssembly, generate);
+        //}
 
-        /// <summary>
-        /// Generate a dynamic type.
-        /// </summary>
-        /// <param name="name">The type name.</param>
-        /// <param name="attributes">The type's attributes.</param>
-        /// <param name="saveAssembly">Flag indicating whether the dynamic assembly should be saved.</param>
-        /// <param name="generate">The callback used to generate the type.</param>
-        /// <returns>The created type.</returns>
-        /// <exception cref="ArgumentNullException">Thrown if argument is null.</exception>
-        /// <remarks>
-        /// This is a static method used to create a dynamic type in a dynamic assembly, often for
-        /// code generation purposes. It automates various steps and provides a boolean parameter
-        /// indicating whether to save the assembly to a file, so you can run verification passes on it:
-        /// <code>
-        /// var newType = Runtime.CreateType(name: "TypeFoo",
-        ///                                  saveAssembly: true,
-        ///                                  generate: typeBuilder =&gt;
-        /// {
-        ///     // see docs on TypeBuilder
-        ///     ...
-        /// });
-        /// </code>
-        /// </remarks>
-        public static Type CreateType(string name, TypeAttributes attributes, bool saveAssembly, Action<TypeBuilder> generate)
-        {
-            if (name == null) throw new ArgumentNullException("name");
-            if (generate == null) throw new ArgumentNullException("generate");
-            var asmName = new AssemblyName(name);
-            var asm = AppDomain.CurrentDomain
-                               .DefineDynamicAssembly(asmName, saveAssembly ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
-            var mod = asm.DefineDynamicModule(name, name + ".dll");
-            var typ = mod.DefineType(name, TypeAttributes.Class | TypeAttributes.Public);
-            generate(typ);
-            var final = typ.CreateType();
-            if (saveAssembly) asm.Save(name + ".dll");
-            return final;
-        }
+        ///// <summary>
+        ///// Generate a dynamic type.
+        ///// </summary>
+        ///// <param name="name">The type name.</param>
+        ///// <param name="attributes">The type's attributes.</param>
+        ///// <param name="saveAssembly">Flag indicating whether the dynamic assembly should be saved.</param>
+        ///// <param name="generate">The callback used to generate the type.</param>
+        ///// <returns>The created type.</returns>
+        ///// <exception cref="ArgumentNullException">Thrown if argument is null.</exception>
+        ///// <remarks>
+        ///// This is a static method used to create a dynamic type in a dynamic assembly, often for
+        ///// code generation purposes. It automates various steps and provides a boolean parameter
+        ///// indicating whether to save the assembly to a file, so you can run verification passes on it:
+        ///// <code>
+        ///// var newType = Runtime.CreateType(name: "TypeFoo",
+        /////                                  saveAssembly: true,
+        /////                                  generate: typeBuilder =&gt;
+        ///// {
+        /////     // see docs on TypeBuilder
+        /////     ...
+        ///// });
+        ///// </code>
+        ///// </remarks>
+        //public static Type CreateType(string name, TypeAttributes attributes, bool saveAssembly, Action<TypeBuilder> generate)
+        //{
+        //    if (name == null) throw new ArgumentNullException("name");
+        //    if (generate == null) throw new ArgumentNullException("generate");
+        //    var asmName = new AssemblyName(name);
+        //    var asm = AppDomain.CurrentDomain
+        //                       .DefineDynamicAssembly(asmName, saveAssembly ? AssemblyBuilderAccess.RunAndSave : AssemblyBuilderAccess.Run);
+        //    var mod = asm.DefineDynamicModule(name, name + ".dll");
+        //    var typ = mod.DefineType(name, TypeAttributes.Class | TypeAttributes.Public);
+        //    generate(typ);
+        //    var final = typ.CreateType();
+        //    if (saveAssembly) asm.Save(name + ".dll");
+        //    return final;
+        //}
 
         /// <summary>
         /// Shorthand for creating open instance delegates from method handles.

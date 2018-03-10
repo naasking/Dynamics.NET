@@ -6,34 +6,12 @@ using System.Text;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using Dynamics;
+using Xunit;
 
-namespace Test
+namespace DynamicsTests
 {
-    class Program
+    public static class Tests
     {
-        static void Main(string[] args)
-        {
-            CheckConstructors();
-            TestDelegateCreate();
-            TestBackingFields();
-            TestHasAttribute();
-            TestGetProperty();
-            TestDynamicDispatch();
-            CircularityTests();
-            CheckImmutable();
-            CheckMutable();
-            CheckMaybeMutable();
-            RuntimeMutable();
-            CopyTests();
-            TestVisitor();
-            TestStringBuilderVisitor();
-            TestMethodResolution();
-            TestDynamicGenerics();
-        }
-        static void Assert(bool cond)
-        {
-            if (!cond) Debugger.Break();
-        }
         sealed class TransitiveField<T>
         {
             readonly T field;
@@ -108,6 +86,7 @@ namespace Test
             }
         }
 
+        [Fact]
         static void CheckImmutable()
         {
             IsImmutable<int>();
@@ -147,7 +126,7 @@ namespace Test
         }
         static void IsImmutable<T>()
         {
-            Assert(Type<T>.Mutability == Mutability.Immutable);
+            Assert.Equal(Mutability.Immutable, Type<T>.Mutability);
         }
         #endregion
 
@@ -175,6 +154,7 @@ namespace Test
             {
             }
         }
+        [Fact]
         static void CheckMutable()
         {
             IsMutable<int[]>();
@@ -187,7 +167,7 @@ namespace Test
         }
         static void IsMutable<T>()
         {
-            Assert(Type<T>.Mutability == Mutability.Mutable);
+            Assert.Equal(Mutability.Mutable, Type<T>.Mutability);
         }
         #endregion
 
@@ -196,6 +176,7 @@ namespace Test
         {
             readonly int field;
         }
+        [Fact]
         static void CheckMaybeMutable()
         {
             IsMaybeMutable<object>();
@@ -207,7 +188,7 @@ namespace Test
         }
         static void IsMaybeMutable<T>()
         {
-            Assert(Type<T>.Mutability == Mutability.Maybe);
+            Assert.Equal(Mutability.Maybe, Type<T>.Mutability);
         }
         #endregion
 
@@ -228,6 +209,7 @@ namespace Test
                 field = x;
             }
         }
+        [Fact]
         static void RuntimeMutable()
         {
             IsImmutable(new MaybeMut());
@@ -244,11 +226,11 @@ namespace Test
         }
         static void IsImmutable<T>(T value)
         {
-            Assert(!Type<T>.IsMutable(value));
+            Assert.False(Type<T>.IsMutable(value));
         }
         static void IsMutable<T>(T value)
         {
-            Assert(Type<T>.IsMutable(value));
+            Assert.True(Type<T>.IsMutable(value));
         }
         #endregion
 
@@ -283,6 +265,7 @@ namespace Test
                 return X.Zip(obj.X, (x, y) => Type<T>.DefaultEquals(x, y)).All(x => x);
             }
         }
+        [Fact]
         static void CopyTests()
         {
             IsCopied(0);
@@ -312,18 +295,19 @@ namespace Test
         static void IsShared<T>(T orig)
         {
             var copy = Type<T>.Copy(orig);
-            Assert(ReferenceEquals(orig, copy));
-            Assert(Type<T>.DefaultEquals(orig, copy));
+            Assert.True(ReferenceEquals(orig, copy));
+            Assert.True(Type<T>.DefaultEquals(orig, copy));
         }
         static void IsCopied<T>(T orig, Func<T, T, bool> eq = null)
         {
             var copy = Type<T>.Copy(orig);
-            Assert(!ReferenceEquals(orig, copy));
-            Assert(eq == null && Type<T>.DefaultEquals(orig, copy) || eq != null && eq(orig, copy));
+            Assert.False(ReferenceEquals(orig, copy));
+            Assert.True(eq == null && Type<T>.DefaultEquals(orig, copy) || eq != null && eq(orig, copy));
         }
         #endregion
 
         #region Check circularity
+        [Fact]
         static void CircularityTests()
         {
             IsAcyclic<int>();
@@ -337,25 +321,26 @@ namespace Test
         }
         static void IsCyclic<T>()
         {
-            Assert(Type<T>.Cycles == Cycles.Yes);
+            Assert.Equal(Cycles.Yes, Type<T>.Cycles);
         }
         static void IsAcyclic<T>()
         {
-            Assert(Type<T>.Cycles == Cycles.No);
+            Assert.Equal(Cycles.No, Type<T>.Cycles);
         }
         #endregion
 
         #region Constructor tests
+        [Fact]
         static void CheckConstructors()
         {
             var x = Constructor<Func<int, int[]>>.Invoke(89);
-            Assert(x.Length == 89);
+            Assert.Equal(89, x.Length);
             var s = Constructor<Func<char[], string>>.Invoke(new[] { 'h', 'e', 'l', 'l', 'o' });
-            Assert(s == "hello");
-            Assert(Constructor<Func<char[], string>>.Info != null);
+            Assert.Equal("hello", s);
+            Assert.NotNull(Constructor<Func<char[], string>>.Info);
             var a = Constructor<Func<int, char[]>>.Invoke(3);
-            Assert(a.Length == 3);
-            Assert(Constructor<Func<int, char[]>>.Info == null);
+            Assert.Equal(3, a.Length);
+            Assert.Null(Constructor<Func<int, char[]>>.Info);
             // the following correct throws an error, but breaks the debugger on the error thrown
             //try
             //{
@@ -369,11 +354,12 @@ namespace Test
         #endregion
 
         #region Runtime tests
+        [Fact]
         static void TestDelegateCreate()
         {
             var x = new Action(TestDelegateCreate);
             var y = x.Method.Create<Action>();
-            Assert(y != null);
+            Assert.NotNull(y);
             try
             {
                 x.Method.Create<Func<int>>();
@@ -387,35 +373,36 @@ namespace Test
             int x;
             public int X { get { return x; } }
         }
+        [Fact]
         static void TestBackingFields()
         {
             var field = typeof(ROProperty).GetFields(BindingFlags.NonPublic | BindingFlags.Instance)[0];
             var prop = typeof(ROProperty).GetProperty(nameof(ROProperty.X));
             var inferred = prop.GetBackingField();
-            Assert(field != null);
-            Assert(prop != null);
-            Assert(inferred == field);
-            Assert(field.IsBackingField());
-            Assert(prop.HasAutoField());
-            Assert(field.FieldName() == "X");
+            Assert.NotNull(field);
+            Assert.NotNull(prop);
+            Assert.Equal(field, inferred);
+            Assert.True(field.IsBackingField());
+            Assert.True(prop.HasAutoField());
+            Assert.Equal("X", field.FieldName());
 
             var noauto = typeof(NoAutoField).GetProperty(nameof(NoAutoField.X));
-            Assert(!noauto.HasAutoField());
-            Assert(noauto.GetBackingField() == null);
+            Assert.False(noauto.HasAutoField());
+            Assert.Null(noauto.GetBackingField());
         }
         static void TestHasAttribute()
         {
-            Assert(typeof(PureType).Has<System.Diagnostics.Contracts.PureAttribute>());
+            Assert.True(typeof(PureType).Has<System.Diagnostics.Contracts.PureAttribute>());
             var prop = typeof(PureImpureMethod).GetProperty(nameof(PureImpureMethod.X));
-            Assert(prop.Has<System.Diagnostics.Contracts.PureAttribute>());
+            Assert.True(prop.Has<System.Diagnostics.Contracts.PureAttribute>());
         }
         static void TestGetProperty()
         {
             var prop = typeof(PureImpureMethod).GetProperty(nameof(PureImpureMethod.X));
             var getter = prop.GetGetMethod();
             var indirect = getter.GetProperty();
-            Assert(prop != null);
-            Assert(prop == indirect);
+            Assert.NotNull(prop);
+            Assert.Equal(prop, indirect);
         }
         #endregion
 
@@ -428,6 +415,7 @@ namespace Test
                 Extracted = typeof(T);
             }
         }
+        [Fact]
         static void TestDynamicDispatch()
         {
             DispatchMatch<int>();
@@ -438,7 +426,7 @@ namespace Test
         {
             var dispatcher = new Dispatcher();
             Runtime.GetType(ref dispatcher, typeof(T));
-            Assert(dispatcher.Extracted == typeof(T));
+            Assert.Equal(typeof(T), dispatcher.Extracted);
         }
         #endregion
 
@@ -453,23 +441,24 @@ namespace Test
         {
             public void Int(int x)
             {
-                Assert(x == 399);
+                Assert.Equal(399, x);
             }
             public void String(string x)
             {
-                Assert(x == "hello world!");
+                Assert.Equal("hello world!", x);
             }
             public void Else(object y)
             {
-                Assert(y.GetType() == typeof(DateTimeKind));
+                Assert.Equal(typeof(DateTimeKind), y.GetType());
             }
         }
+        [Fact]
         static void TestVisitor()
         {
-            Assert(Visitor<IVisitor, int>.Invoke != null);
-            Assert(Visitor<IVisitor, string>.Invoke != null);
-            Assert(Visitor<IVisitor, object>.Invoke != null);
-            Assert(Visitor<IVisitor, Enum>.Invoke != null);
+            Assert.NotNull(Visitor<IVisitor, int>.Invoke);
+            Assert.NotNull(Visitor<IVisitor, string>.Invoke);
+            Assert.NotNull(Visitor<IVisitor, object>.Invoke);
+            Assert.NotNull(Visitor<IVisitor, Enum>.Invoke);
 
             var v = new Visitor();
             Visitor<IVisitor>.Invoke(v, 399);
@@ -480,44 +469,47 @@ namespace Test
         {
             public static readonly Func<StringBuilder, T, StringBuilder> Invoke = Method.Resolve<Func<StringBuilder, T, StringBuilder>>("Append");
         }
+        [Fact]
         static void TestStringBuilderVisitor()
         {
             var buf = new StringBuilder();
             AppendOverload<int>.Invoke(buf, 3);
-            Assert(buf.ToString() == "3");
+            Assert.Equal("3", buf.ToString());
             buf.Clear();
             AppendOverload<string>.Invoke(buf, "foo");
-            Assert(buf.ToString() == "foo");
+            Assert.Equal("foo", buf.ToString());
             buf.Clear();
             AppendOverload<object>.Invoke(buf, 99);
-            Assert(buf.ToString() == "99");
+            Assert.Equal("99", buf.ToString());
             buf.Clear();
         }
         static class Parse<T>
         {
             public static readonly TryParse<T> TryParse = Method.Resolve<TryParse<T>>();
         }
+        [Fact]
         static void TestMethodResolution()
         {
             int i;
-            Assert(Parse<int>.TryParse("345", out i));
-            Assert(i == 345);
+            Assert.True(Parse<int>.TryParse("345", out i));
+            Assert.Equal(345, i);
             DateTime d;
-            Assert(Parse<DateTime>.TryParse("2016-02-01", out d));
-            Assert(d == new DateTime(2016, 2, 1));
+            Assert.True(Parse<DateTime>.TryParse("2016-02-01", out d));
+            Assert.Equal(new DateTime(2016, 2, 1), d);
         }
         #endregion
 
         #region Generic type associations
+        [Fact]
         static void TestDynamicGenerics()
         {
             var list = Type<IList<int>>.Create();
-            Assert(list != null);
-            Assert(list is List<int>);
+            Assert.NotNull(list);
+            Assert.True(list is List<int>);
 
             var dict = Type<IDictionary<int, string>>.Create();
-            Assert(dict != null);
-            Assert(dict is Dictionary<int, string>);
+            Assert.NotNull(dict);
+            Assert.True(dict is Dictionary<int, string>);
         }
         #endregion
     }

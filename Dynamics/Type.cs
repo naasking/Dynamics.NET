@@ -414,7 +414,8 @@ namespace Dynamics
                 Kind.Definition.Apply(typeof(IOrderedEnumerable<>), type),
                 Kind.Definition.Apply(typeof(IQueryable<>), type), typeof(IQueryable),
                 typeof(IReflect), typeof(ISafeSerializationData), typeof(IServiceProvider),
-                Type.GetType("System.ITuple, mscorlib"), typeof(IStructuralEquatable), typeof(IStructuralComparable),
+                //Type.GetType("System.ITuple, mscorlib"),  //FIXME: not sure why I was loading this dynamically
+                typeof(IStructuralEquatable), typeof(IStructuralComparable),
                 typeof(ISurrogateSelector), typeof(object), typeof(ValueType)
             }
             .Where(x => type.Subtypes(x));
