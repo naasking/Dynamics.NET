@@ -7,6 +7,15 @@ namespace Dynamics
 {
     public static class Constructors
     {
+        static Constructors()
+        {
+            Associate(typeof(IList<>), typeof(List<>));
+            Associate(typeof(ICollection<>), typeof(List<>));
+            Associate(typeof(ISet<>), typeof(HashSet<>));
+            Associate(typeof(IDictionary<,>), typeof(Dictionary<,>));
+            Associate(typeof(IProducerConsumerCollection<>), typeof(ConcurrentBag<>));
+        }
+
         #region Interface instance resolver
         static readonly ConcurrentDictionary<Type, Tuple<Type, int[]>> typeMap = new ConcurrentDictionary<Type, Tuple<Type, int[]>>();
 

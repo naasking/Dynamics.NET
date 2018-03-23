@@ -126,7 +126,7 @@ namespace DynamicsTests
         }
         static void IsImmutable<T>()
         {
-            Assert.Equal(Mutability.Immutable, Type<T>.Mutability);
+            Assert.Equal(Mutability.Immutable, Mutable<T>.Mutability);
         }
         #endregion
 
@@ -167,7 +167,7 @@ namespace DynamicsTests
         }
         static void IsMutable<T>()
         {
-            Assert.Equal(Mutability.Mutable, Type<T>.Mutability);
+            Assert.Equal(Mutability.Mutable, Mutable<T>.Mutability);
         }
         #endregion
 
@@ -188,7 +188,7 @@ namespace DynamicsTests
         }
         static void IsMaybeMutable<T>()
         {
-            Assert.Equal(Mutability.Maybe, Type<T>.Mutability);
+            Assert.Equal(Mutability.Maybe, Mutable<T>.Mutability);
         }
         #endregion
 
@@ -226,11 +226,11 @@ namespace DynamicsTests
         }
         static void IsImmutable<T>(T value)
         {
-            Assert.False(Type<T>.IsMutable(value));
+            Assert.False(Mutable<T>.IsMutable(value));
         }
         static void IsMutable<T>(T value)
         {
-            Assert.True(Type<T>.IsMutable(value));
+            Assert.True(Mutable<T>.IsMutable(value));
         }
         #endregion
 
@@ -294,13 +294,13 @@ namespace DynamicsTests
         }
         static void IsShared<T>(T orig)
         {
-            var copy = Type<T>.Copy(orig);
+            var copy = Copy<T>.DeepCopy(orig);
             Assert.True(ReferenceEquals(orig, copy));
             Assert.True(Type<T>.DefaultEquals(orig, copy));
         }
         static void IsCopied<T>(T orig, Func<T, T, bool> eq = null)
         {
-            var copy = Type<T>.Copy(orig);
+            var copy = Copy<T>.DeepCopy(orig);
             Assert.False(ReferenceEquals(orig, copy));
             Assert.True(eq == null && Type<T>.DefaultEquals(orig, copy) || eq != null && eq(orig, copy));
         }
@@ -321,11 +321,11 @@ namespace DynamicsTests
         }
         static void IsCyclic<T>()
         {
-            Assert.Equal(Cycles.Yes, Type<T>.Cycles);
+            Assert.Equal(Cycles.Yes, Cyclic<T>.Cycles);
         }
         static void IsAcyclic<T>()
         {
-            Assert.Equal(Cycles.No, Type<T>.Cycles);
+            Assert.Equal(Cycles.No, Cyclic<T>.Cycles);
         }
         #endregion
 

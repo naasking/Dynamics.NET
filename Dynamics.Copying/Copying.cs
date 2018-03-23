@@ -27,7 +27,7 @@ namespace Dynamics
             refs.Add(source, x);
             for (int i = 0; i < source.Length; ++i)
             {
-                x[i] = Type<T>.Copy(source[i], refs);
+                x[i] = Copy<T>.DeepCopy(source[i], refs);
             }
             return x;
         }
@@ -37,7 +37,7 @@ namespace Dynamics
         {
             refs.Add(source, copy);
             foreach (var x in source)
-                copy.Add(Type<object>.Copy(x, refs));
+                copy.Add(Copy<object>.DeepCopy(x, refs));
             return copy;
         }
 
@@ -56,7 +56,7 @@ namespace Dynamics
         {
             refs.Add(source, copy);
             foreach (var x in source)
-                copy.Add(Type<T>.Copy(x, refs));
+                copy.Add(Copy<T>.DeepCopy(x, refs));
             return copy;
         }
 
@@ -75,7 +75,7 @@ namespace Dynamics
         {
             refs.Add(source, copy);
             foreach (var x in source)
-                copy.Add(Type<T>.Copy(x, refs));
+                copy.Add(Copy<T>.DeepCopy(x, refs));
             return copy;
         }
 
@@ -91,15 +91,15 @@ namespace Dynamics
         
         public static KeyValuePair<T0, T1> KeyValuePair<T0, T1>(KeyValuePair<T0, T1> source, Dictionary<object, object> refs)
         {
-            return new KeyValuePair<T0, T1>(Type<T0>.Copy(source.Key, refs), Type<T1>.Copy(source.Value, refs));
+            return new KeyValuePair<T0, T1>(Copy<T0>.DeepCopy(source.Key, refs), Copy<T1>.DeepCopy(source.Value, refs));
         }
 
         public static ReadOnlyCollection<T> ReadOnlyCollection<T>(ReadOnlyCollection<T> source, Dictionary<object, object> refs)
         {
             //FIXME: this doesn't quite work because T could have a back ref to this collection, which isn't yet created
-            return Type<T>.Mutability == Mutability.Immutable
+            return Mutable<T>.Mutability == Mutability.Immutable
                 ? source
-                : new ReadOnlyCollection<T>(source.Select(x => Type<T>.Copy(x, refs)).ToList());
+                : new ReadOnlyCollection<T>(source.Select(x => Copy<T>.DeepCopy(x, refs)).ToList());
         }
 
         //FIXME: add other collection types?
@@ -109,7 +109,7 @@ namespace Dynamics
         {
             //FIXME: I think this works only for non-circular delegates, ie. target could have back ref to this delegate
             var del = (Delegate)(object)source;
-            var copy = (T)(object)System.Delegate.CreateDelegate(typeof(T), Type<object>.Copy(del.Target, refs), del.Method);
+            var copy = (T)(object)System.Delegate.CreateDelegate(typeof(T), Copy<object>.DeepCopy(del.Target, refs), del.Method);
             refs[source] = copy;
             return copy;
         }

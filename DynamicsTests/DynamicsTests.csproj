@@ -68,6 +68,14 @@
       <Project>{85b3d00d-49e3-4e5b-9ec9-dd13c640bb6d}</Project>
       <Name>Dynamics.Constructors</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Dynamics.Copying\Dynamics.Copying.csproj">
+      <Project>{86201d02-6b85-4619-9c40-c0bbdbb9a0b8}</Project>
+      <Name>Dynamics.Copying</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Dynamics.Cyclic\Dynamics.Cyclic.csproj">
+      <Project>{ff35d109-7ec8-407b-8bb4-200de77dc222}</Project>
+      <Name>Dynamics.Cyclic</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Dynamics.Dispatch\Dynamics.Dispatch.csproj">
       <Project>{77ffdcc6-1965-4740-bc40-50e4501137c5}</Project>
       <Name>Dynamics.Dispatch</Name>
@@ -75,6 +83,10 @@
     <ProjectReference Include="..\Dynamics.Kinds\Dynamics.Kinds.csproj">
       <Project>{3d807e6f-a24a-4776-adcf-82ddeea3bce6}</Project>
       <Name>Dynamics.Kinds</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Dynamics.Mutable\Dynamics.Mutable.csproj">
+      <Project>{69aad124-cb85-4ab4-b859-d2d55ff82ad2}</Project>
+      <Name>Dynamics.Mutable</Name>
     </ProjectReference>
     <ProjectReference Include="..\Dynamics.Reflection\Dynamics.Reflection.csproj">
       <Project>{4d0914da-0c8d-48da-8445-7ec448a4ff2a}</Project>
