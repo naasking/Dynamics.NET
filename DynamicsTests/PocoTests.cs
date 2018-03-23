@@ -85,22 +85,18 @@ namespace DynamicsTests
         [Fact]
         public static void DelegateTests()
         {
-            var foo = new Foo { Index = 3, Bar = new Bar { Baz = 99 } };
-            var tc = new Dynamics.Poco.Delegates.PullMapper<Ref<int>>(new DelegateSum());
-            Sum<int>.Compute = (i, r) => r.value += i;
-            Sum<string>.Compute = (x, r) => x;
-            Sum<Foo>.Compute = tc.Compile<Foo>();
-            Sum<Bar>.Compute = tc.Compile<Bar>();
-            var sum = new Ref<int>();
-            Sum<Foo>.Compute(foo, sum);
-            Assert.Equal(102, sum.value);
+            RunSimpleTests(new Dynamics.Poco.Delegates.PullMapper<Ref<int>>(new DelegateSum()));
         }
 
         [Fact]
         public static void ExpressionTests()
         {
+            RunSimpleTests(new Dynamics.Poco.Expressions.PullMapper<Ref<int>>(new ExpressionSum()));
+        }
+
+        static void RunSimpleTests(IPocoMapper<Ref<int>> tc)
+        {
             var foo = new Foo { Index = 3, Bar = new Bar { Baz = 99 } };
-            var tc = new Dynamics.Poco.Expressions.PullMapper<Ref<int>>(new ExpressionSum());
             Sum<int>.Compute = (i, r) => r.value += i;
             Sum<string>.Compute = (x, r) => x;
             Sum<Foo>.Compute = tc.Compile<Foo>();
