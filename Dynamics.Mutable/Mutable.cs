@@ -4,8 +4,6 @@ using System.Linq.Expressions;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
-using System.Diagnostics.Contracts;
-using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Reflection;
 
@@ -70,10 +68,10 @@ namespace Dynamics
                     Func<T, HashSet<object>, bool> f;
                     if (!subtypeMutability.TryGetValue(type, out f))
                     {
-                        var dispatch = new Func<T, HashSet<object>, bool>(DispatchIsMutable<T>).Method
+                        var dispatch = new Func<T, HashSet<object>, bool>(DispatchIsMutable<T>).GetMethodInfo()
                                        .GetGenericMethodDefinition()
                                        .MakeGenericMethod(type);
-                        f = subtypeMutability[type] = (Func<T, HashSet<object>, bool>)Delegate.CreateDelegate(typeof(Func<T, HashSet<object>, bool>), dispatch);
+                        f = subtypeMutability[type] = dispatch.Create<Func<T, HashSet<object>, bool>>();
                     }
                     return f(value, visited);
                 default:

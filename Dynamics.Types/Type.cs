@@ -5,7 +5,6 @@ using System.Runtime.Serialization;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
-using System.Diagnostics.Contracts;
 
 namespace Dynamics
 {
@@ -25,7 +24,7 @@ namespace Dynamics
         /// The cached delegate for <see cref="EqualityComparer{T}.Default"/>.Equals.
         /// </summary>
         public static readonly Func<T, T, bool> DefaultEquals = typeof(T).Subtypes(typeof(IEquatable<T>)) && !typeof(T).IsValueType
-            ? (Func<T, T, bool>)Delegate.CreateDelegate(typeof(Func<T, T, bool>), null, typeof(T).GetMethod("Equals", new[] { typeof(T) }))
+            ? typeof(T).GetMethod("Equals", new[] { typeof(T) }).Create<Func<T, T, bool>>()
             : EqualityComparer<T>.Default.Equals;
 
         /// <summary>

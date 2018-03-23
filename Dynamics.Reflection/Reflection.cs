@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using System.Diagnostics.Contracts;
 
 namespace Dynamics
 {
@@ -18,9 +17,6 @@ namespace Dynamics
     {
         static Reflection()
         {
-            //Type<IList>.OverrideCreate(() => new ArrayList());
-            //Type<IDictionary>.OverrideCreate(() => new Hashtable());
-            //Type<IOrderedDictionary>.OverrideCreate(() => new OrderedDictionary());
         }
 
         /// <summary>
@@ -88,9 +84,9 @@ namespace Dynamics
         public static FieldInfo GetBackingField(this PropertyInfo property)
         {
             if (property == null) throw new ArgumentNullException("property");
-            return property.DeclaringType
-                           .GetField('<' + property.Name + ">k__BackingField",
-                                     BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            var name = '<' + property.Name + ">k__BackingField";
+            return property.DeclaringType.GetRuntimeFields().FirstOrDefault(x => name.Equals(x.Name, StringComparison.Ordinal));
+            //return property.DeclaringType.GetRuntimeField('<' + property.Name + ">k__BackingField");
         }
 
         /// <summary>
@@ -123,10 +119,10 @@ namespace Dynamics
         public static bool HasAutoField(this PropertyInfo property)
         {
             if (property == null) throw new ArgumentNullException("property");
-            var accessor = property.GetGetMethod()
-                        ?? property.GetSetMethod()
-                        ?? property.DeclaringType.GetMethod("get_" + property.Name, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
-                        ?? property.DeclaringType.GetMethod("set_" + property.Name, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
+            var accessor = property.GetMethod
+                        ?? property.SetMethod;
+                        //?? property.DeclaringType.GetMethod("get_" + property.Name, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
+                        //?? property.DeclaringType.GetMethod("set_" + property.Name, BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static);
             return accessor.IsDefined(typeof(CompilerGeneratedAttribute), false);
         }
         
@@ -138,7 +134,7 @@ namespace Dynamics
         public static bool IsAutoGetter(this MethodInfo method)
         {
             return method.Name.StartsWith("get_")
-                && method.Has<CompilerGeneratedAttribute>();
+                && null != method.GetCustomAttribute<CompilerGeneratedAttribute>();
         }
 
         /// <summary>
@@ -149,7 +145,7 @@ namespace Dynamics
         public static bool IsAutoSetter(this MethodInfo method)
         {
             return method.Name.StartsWith("set_")
-                && method.Has<CompilerGeneratedAttribute>();
+                && null != method.GetCustomAttribute<CompilerGeneratedAttribute>();
         }
 
         /// <summary>
@@ -160,7 +156,7 @@ namespace Dynamics
         public static bool IsPureSetter(this MethodInfo method)
         {
             return method.IsAutoSetter()
-                && (method.IsPrivate || method.GetProperty().Has<PureAttribute>());
+                && (method.IsPrivate || null != method.GetProperty().GetCustomAttribute<PureAttribute>());
         }
 
         /// <summary>
@@ -172,7 +168,7 @@ namespace Dynamics
         {
             // assume getter is pure if it's auto-generated or it has [Pure] or setter is private/does not exist
             return method.IsAutoGetter()
-                || method.Name.StartsWith("get_") && (method.GetProperty().Has<PureAttribute>() || method.GetProperty().GetSetMethod() == null);
+                || method.Name.StartsWith("get_") && (null != method.GetProperty().GetCustomAttribute<PureAttribute>() || method.GetProperty().SetMethod == null);
         }
 
         /// <summary>
@@ -184,20 +180,7 @@ namespace Dynamics
         {
             if (!method.Name.StartsWith("get_") && !method.Name.StartsWith("set_"))
                 throw new ArgumentException("Not a getter or setter.", "method");
-            return method.ReflectedType.GetProperty(method.Name.Substring(4));
-        }
-
-        /// <summary>
-        /// Checks whether the given member has a particular attribute.
-        /// </summary>
-        /// <typeparam name="T">The attribute type to search for.</typeparam>
-        /// <param name="member">The member to search for attributes.</param>
-        /// <param name="inherit">Specify whether the hierarchy chain should also be checked for this attribute.</param>
-        /// <returns>True if the attribute is present, false otherwise.</returns>
-        public static bool Has<T>(this ICustomAttributeProvider member, bool inherit = false)
-            where T : Attribute
-        {
-            return member.IsDefined(typeof(T), inherit);
+            return method.DeclaringType.GetRuntimeProperty(method.Name.Substring(4));
         }
 
         /// <summary>
@@ -297,56 +280,5 @@ namespace Dynamics
         //    if (saveAssembly) asm.Save(name + ".dll");
         //    return final;
         //}
-
-        ///// <summary>
-        ///// Am efficient universal visitor interface.
-        ///// </summary>
-        ///// <typeparam name="TVisitor"></typeparam>
-        ///// <typeparam name="T"></typeparam>
-        ///// <param name="visitor"></param>
-        ///// <param name="value"></param>
-        //public static void Accept<TVisitor, T>(this TVisitor visitor, T value)
-        //    where TVisitor : class
-        //{
-        //    Visitor<TVisitor, T>.Invoke(visitor, value);
-        //}
-
-        //#region Dynamic type resolver
-        //static readonly ConcurrentDictionary<Type, Dispatcher> entries = new ConcurrentDictionary<Type, Dispatcher>();
-
-        ///// <summary>
-        ///// Resolve a dynamic type to a type variable.
-        ///// </summary>
-        ///// <typeparam name="T">The dispatcher type.</typeparam>
-        ///// <param name="dispatch">The dispatcher.</param>
-        ///// <param name="type">The dynamic type.</param>
-        //public static void GetType<T>(ref T dispatch, Type type)
-        //    where T : struct, IDynamicType
-        //{
-        //    Dispatcher x;
-        //    if (!entries.TryGetValue(type, out x))
-        //    {
-        //        x = (Dispatcher)typeof(Case<>)
-        //            .MakeGenericType(type)
-        //            .GetConstructor(Type.EmptyTypes)
-        //            .Invoke(null);
-        //        entries.TryAdd(type, x);
-        //    }
-        //    x.Dispatch(ref dispatch);
-        //}
-
-        //abstract class Dispatcher
-        //{
-        //    public abstract void Dispatch<TDispatch>(ref TDispatch handler)
-        //        where TDispatch : struct, IDynamicType;
-        //}
-        //sealed class Case<T> : Dispatcher
-        //{
-        //    public override void Dispatch<TDispatch>(ref TDispatch dispatch)
-        //    {
-        //        dispatch.Type<T>();
-        //    }
-        //}
-        //#endregion
     }
 }

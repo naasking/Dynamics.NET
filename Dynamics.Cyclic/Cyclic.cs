@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Reflection;
-using System.Diagnostics.Contracts;
 
 namespace Dynamics
 {

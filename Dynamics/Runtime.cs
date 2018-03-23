@@ -1,13 +1,7 @@
 ﻿using System;
 using System.Linq;
-using System.Collections;
-using System.Collections.Specialized;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Reflection.Emit;
-using System.Collections.Concurrent;
-using System.Runtime.CompilerServices;
-using System.Diagnostics.Contracts;
 
 namespace Dynamics
 {
@@ -48,8 +42,14 @@ namespace Dynamics
             if (subtype == null) throw new ArgumentNullException("subtype");
             //FIXME: this still may not be general enough a subtyping relation, ie. supertype may contain generic parameters that
             //need to unify with types inside 'subtype' -- need full unification to ascertain proper subtyping?
-            return supertype.IsAssignableFrom(subtype)
-                || unifyVariables && supertype.IsGenericParameter && Array.TrueForAll(supertype.GetGenericParameterConstraints(), x => subtype.Subtypes(x));
+            if (supertype.GetTypeInfo().IsAssignableFrom(subtype.GetTypeInfo()))
+                return true;
+            if (!unifyVariables || !supertype.IsGenericParameter)
+                return false;
+            foreach (var x in supertype.GetTypeInfo().GetGenericParameterConstraints())
+                if (!subtype.Subtypes(x))
+                    return false;
+            return true;
         }
 
         /// <summary>
@@ -88,7 +88,7 @@ namespace Dynamics
             var type = typeof(T);
             if (!type.Subtypes(typeof(Delegate)))
                 throw new ArgumentException("Type " + type.Name + " is not a delegate type.");
-            return (T)(object)Delegate.CreateDelegate(type, null, method, true);
+            return (T)(object)method.CreateDelegate(type, null);
         }
     }
 }

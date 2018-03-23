@@ -66,7 +66,7 @@ namespace DynamicsTests
         }
 
         // trust the purity declaration
-        [System.Diagnostics.Contracts.Pure]
+        [Pure]
         sealed class PureType
         {
             public int X { get; set; }
@@ -74,7 +74,7 @@ namespace DynamicsTests
         sealed class PureProp
         {
             // trust the purity declaration
-            [System.Diagnostics.Contracts.Pure]
+            [Pure]
             public int X { get; set; }
         }
         sealed class Formattable : IFormattable
@@ -148,7 +148,7 @@ namespace DynamicsTests
         }
         struct PureImpureMethod
         {
-            [System.Diagnostics.Contracts.Pure]
+            [Pure]
             public int X { get; set; }
             public void Foo()
             {
@@ -389,12 +389,6 @@ namespace DynamicsTests
             var noauto = typeof(NoAutoField).GetProperty(nameof(NoAutoField.X));
             Assert.False(noauto.HasAutoField());
             Assert.Null(noauto.GetBackingField());
-        }
-        static void TestHasAttribute()
-        {
-            Assert.True(typeof(PureType).Has<System.Diagnostics.Contracts.PureAttribute>());
-            var prop = typeof(PureImpureMethod).GetProperty(nameof(PureImpureMethod.X));
-            Assert.True(prop.Has<System.Diagnostics.Contracts.PureAttribute>());
         }
         static void TestGetProperty()
         {

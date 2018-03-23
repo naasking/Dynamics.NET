@@ -7,8 +7,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Dynamics.Constructors\Dynamics.Constructors.csproj" />
-    <ProjectReference Include="..\Dynamics.Mutable\Dynamics.Mutable.csproj" />
-    <ProjectReference Include="..\Dynamics.Reflection\Dynamics.Reflection.csproj" />
     <ProjectReference Include="..\Dynamics\Dynamics.NET.csproj" />
   </ItemGroup>
 

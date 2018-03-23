@@ -59,6 +59,7 @@ namespace Dynamics
             var ctor = new Func<object>(Constructor<string, object>).Method.GetGenericMethodDefinition();
             return (Func<T>)ctor.MakeGenericMethod(instance, type).CreateDelegate(typeof(Func<T>));
         }
+
         static TAbstract Constructor<TInstance, TAbstract>()
             where TInstance : TAbstract
         {

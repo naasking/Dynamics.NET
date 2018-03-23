@@ -3,6 +3,7 @@
 == v1.0 ==
 
  * add more types/methods to mutability whitelist
+ * a custom pure attribute, independent of contracts?
  * current approach to circlar copy resolution doesn't work well
    enough, particularly for immutable types whose children
    have back refs/aren't themselves immutable, ie. delegates,
