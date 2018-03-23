@@ -72,7 +72,7 @@ namespace Dynamics
             // initialize the default constructor: if T:new(), then invoke the parameterless constructor
             // else if it's an array or struct, then simply return default(T)
             create = type.Subtypes(typeof(MemberInfo))   ? null:
-                     type.IsInterface || type.IsAbstract ? Runtime.Constructor<T>():
+                     type.IsInterface || type.IsAbstract ? Constructors.Default<T>():
                      type.IsArray || type.IsValueType    ? DefaultCtor:
                      type == typeof(string)              ? Expression.Lambda<Func<T>>(Expression.Constant(string.Empty)).Compile():
                      HasEmptyConstructor(type)           ? Constructor<Func<T>>.Invoke:
@@ -333,7 +333,7 @@ namespace Dynamics
 
         static bool ImmutableWhitelist(Type type)
         {
-            return type.Has<PureAttribute>()
+            return type.GetCustomAttribute<PureAttribute>() != null
                 || type.IsPrimitive
                 || type == typeof(DateTime)
                 || type == typeof(TimeSpan)
@@ -406,13 +406,13 @@ namespace Dynamics
             var types = new[]
             {
                 typeof(IFormattable), typeof(IConvertible), typeof(ICloneable), typeof(IComparable),
-                Kind.Definition.Apply(typeof(IComparable<>), type), Kind.Definition.Apply(typeof(IEquatable<>), type),
+                typeof(IComparable<>).MakeGenericType(type), typeof(IEquatable<>).MakeGenericType(type),
                 typeof(IFormatProvider), typeof(ICustomFormatter), typeof(ICustomAttributeProvider),
-                Kind.Definition.Apply(typeof(IComparer<>), type), 
+                typeof(IComparer<>).MakeGenericType(type),
                 //Kind.Definition.Apply(typeof(IGrouping<>), type), Kind.Definition.Apply(typeof(ILookup<>), type),
-                Kind.Definition.Apply(typeof(IOrderedQueryable<>), type), typeof(IOrderedQueryable),
-                Kind.Definition.Apply(typeof(IOrderedEnumerable<>), type),
-                Kind.Definition.Apply(typeof(IQueryable<>), type), typeof(IQueryable),
+                typeof(IOrderedQueryable<>).MakeGenericType(type), typeof(IOrderedQueryable),
+                typeof(IOrderedEnumerable<>).MakeGenericType(type),
+                typeof(IQueryable<>).MakeGenericType(type), typeof(IQueryable),
                 typeof(IReflect), typeof(ISafeSerializationData), typeof(IServiceProvider),
                 //Type.GetType("System.ITuple, mscorlib"),  //FIXME: not sure why I was loading this dynamically
                 typeof(IStructuralEquatable), typeof(IStructuralComparable),

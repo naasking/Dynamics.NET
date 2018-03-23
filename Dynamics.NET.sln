@@ -3,9 +3,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dynamics.NET", "Dynamics\Dynamics.NET.csproj", "{8228926A-9732-4D82-9134-E6DE61D03EB8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dynamics.NET", "Dynamics\Dynamics.NET.csproj", "{8228926A-9732-4D82-9134-E6DE61D03EB8}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DynamicsTests", "DynamicsTests\DynamicsTests.csproj", "{475F5783-FE90-4010-BE39-1008B4A4B7E6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dynamics.Constructors", "Dynamics.Constructors\Dynamics.Constructors.csproj", "{85B3D00D-49E3-4E5B-9EC9-DD13C640BB6D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dynamics.Kinds", "Dynamics.Kinds\Dynamics.Kinds.csproj", "{3D807E6F-A24A-4776-ADCF-82DDEEA3BCE6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dynamics.Reflection", "Dynamics.Reflection\Dynamics.Reflection.csproj", "{4D0914DA-0C8D-48DA-8445-7EC448A4FF2A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dynamics.Dispatch", "Dynamics.Dispatch\Dynamics.Dispatch.csproj", "{77FFDCC6-1965-4740-BC40-50E4501137C5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dynamics.Types", "Dynamics.Types\Dynamics.Types.csproj", "{124DD5B7-62BA-47B8-9E6D-0E95BFB6F192}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +31,26 @@ Global
 		{475F5783-FE90-4010-BE39-1008B4A4B7E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{475F5783-FE90-4010-BE39-1008B4A4B7E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{475F5783-FE90-4010-BE39-1008B4A4B7E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85B3D00D-49E3-4E5B-9EC9-DD13C640BB6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85B3D00D-49E3-4E5B-9EC9-DD13C640BB6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85B3D00D-49E3-4E5B-9EC9-DD13C640BB6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85B3D00D-49E3-4E5B-9EC9-DD13C640BB6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D807E6F-A24A-4776-ADCF-82DDEEA3BCE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D807E6F-A24A-4776-ADCF-82DDEEA3BCE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D807E6F-A24A-4776-ADCF-82DDEEA3BCE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D807E6F-A24A-4776-ADCF-82DDEEA3BCE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D0914DA-0C8D-48DA-8445-7EC448A4FF2A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D0914DA-0C8D-48DA-8445-7EC448A4FF2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D0914DA-0C8D-48DA-8445-7EC448A4FF2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D0914DA-0C8D-48DA-8445-7EC448A4FF2A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77FFDCC6-1965-4740-BC40-50E4501137C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77FFDCC6-1965-4740-BC40-50E4501137C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77FFDCC6-1965-4740-BC40-50E4501137C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77FFDCC6-1965-4740-BC40-50E4501137C5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{124DD5B7-62BA-47B8-9E6D-0E95BFB6F192}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{124DD5B7-62BA-47B8-9E6D-0E95BFB6F192}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{124DD5B7-62BA-47B8-9E6D-0E95BFB6F192}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{124DD5B7-62BA-47B8-9E6D-0E95BFB6F192}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

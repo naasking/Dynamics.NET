@@ -64,10 +64,33 @@
     <Analyzer Include="..\packages\xunit.analyzers.0.7.0\analyzers\dotnet\cs\xunit.analyzers.dll" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Dynamics.Constructors\Dynamics.Constructors.csproj">
+      <Project>{85b3d00d-49e3-4e5b-9ec9-dd13c640bb6d}</Project>
+      <Name>Dynamics.Constructors</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Dynamics.Dispatch\Dynamics.Dispatch.csproj">
+      <Project>{77ffdcc6-1965-4740-bc40-50e4501137c5}</Project>
+      <Name>Dynamics.Dispatch</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Dynamics.Kinds\Dynamics.Kinds.csproj">
+      <Project>{3d807e6f-a24a-4776-adcf-82ddeea3bce6}</Project>
+      <Name>Dynamics.Kinds</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Dynamics.Reflection\Dynamics.Reflection.csproj">
+      <Project>{4d0914da-0c8d-48da-8445-7ec448a4ff2a}</Project>
+      <Name>Dynamics.Reflection</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Dynamics.Types\Dynamics.Types.csproj">
+      <Project>{124dd5b7-62ba-47b8-9e6d-0e95bfb6f192}</Project>
+      <Name>Dynamics.Types</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Dynamics\Dynamics.NET.csproj">
       <Project>{8228926a-9732-4d82-9134-e6de61d03eb8}</Project>
       <Name>Dynamics.NET</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

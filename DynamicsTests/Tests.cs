@@ -425,7 +425,7 @@ namespace DynamicsTests
         static void DispatchMatch<T>()
         {
             var dispatcher = new Dispatcher();
-            Runtime.GetType(ref dispatcher, typeof(T));
+            Dispatch.GetType(ref dispatcher, typeof(T));
             Assert.Equal(typeof(T), dispatcher.Extracted);
         }
         #endregion

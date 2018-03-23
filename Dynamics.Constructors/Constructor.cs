@@ -40,7 +40,7 @@ namespace Dynamics
         static Constructor()
         {
             var tfunc = typeof(TFunc);
-            if (!tfunc.Subtypes(typeof(Delegate)))
+            if (!typeof(Delegate).IsAssignableFrom(tfunc))
                 throw new ArgumentException(tfunc.Name + " must be a delegate type.");
             var invoke = tfunc.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
             var type = invoke.ReturnType;
