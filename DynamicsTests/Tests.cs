@@ -262,7 +262,7 @@ namespace DynamicsTests
             public bool Equals(EquatableSeq<T> obj)
             {
                 //return X.SequenceEqual(obj.X);
-                return X.Zip(obj.X, (x, y) => Type<T>.DefaultEquals(x, y)).All(x => x);
+                return X.Zip(obj.X, (x, y) => Defaults<T>.Equality(x, y)).All(x => x);
             }
         }
         [Fact]
@@ -296,13 +296,13 @@ namespace DynamicsTests
         {
             var copy = Copy<T>.DeepCopy(orig);
             Assert.True(ReferenceEquals(orig, copy));
-            Assert.True(Type<T>.DefaultEquals(orig, copy));
+            Assert.True(Defaults<T>.Equality(orig, copy));
         }
         static void IsCopied<T>(T orig, Func<T, T, bool> eq = null)
         {
             var copy = Copy<T>.DeepCopy(orig);
             Assert.False(ReferenceEquals(orig, copy));
-            Assert.True(eq == null && Type<T>.DefaultEquals(orig, copy) || eq != null && eq(orig, copy));
+            Assert.True(eq == null && Defaults<T>.Equality(orig, copy) || eq != null && eq(orig, copy));
         }
         #endregion
 
@@ -493,18 +493,18 @@ namespace DynamicsTests
         }
         #endregion
 
-        #region Generic type associations
-        [Fact]
-        static void TestDynamicGenerics()
-        {
-            var list = Type<IList<int>>.Create();
-            Assert.NotNull(list);
-            Assert.True(list is List<int>);
+        //#region Generic type associations
+        //[Fact]
+        //static void TestDynamicGenerics()
+        //{
+        //    var list = Type<IList<int>>.Create();
+        //    Assert.NotNull(list);
+        //    Assert.True(list is List<int>);
 
-            var dict = Type<IDictionary<int, string>>.Create();
-            Assert.NotNull(dict);
-            Assert.True(dict is Dictionary<int, string>);
-        }
-        #endregion
+        //    var dict = Type<IDictionary<int, string>>.Create();
+        //    Assert.NotNull(dict);
+        //    Assert.True(dict is Dictionary<int, string>);
+        //}
+        //#endregion
     }
 }

@@ -40,11 +40,12 @@ namespace Dynamics
         static Constructor()
         {
             var tfunc = typeof(TFunc);
-            if (!typeof(Delegate).IsAssignableFrom(tfunc))
+            if (!typeof(Delegate).GetTypeInfo().IsAssignableFrom(tfunc.GetTypeInfo()))
                 throw new ArgumentException(tfunc.Name + " must be a delegate type.");
-            var invoke = tfunc.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
+            var invoke = tfunc.GetRuntimeMethods().Single(x => "Invoke".Equals(x.Name, StringComparison.Ordinal));
             var type = invoke.ReturnType;
-            if (type.IsAbstract || type.IsInterface)
+            var tinfo = type.GetTypeInfo();
+            if (tinfo.IsAbstract || tinfo.IsInterface)
                 throw new ArgumentException("No constructors for abstract or interface type " + type.Name + ".");
             var ptypes = invoke.GetParameters().Select(x => x.ParameterType).ToArray();
             // treat arrays specially as having a constructor with a single Int32 parameter
@@ -59,7 +60,7 @@ namespace Dynamics
             }
             else
             {
-                Info = type.GetConstructor(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance, null, ptypes, null);
+                Info = tinfo.DeclaredConstructors.SingleOrDefault(x => ptypes.SequenceEqual(x.GetParameters().Select(z => z.ParameterType)));
                 if (Info == null)
                     throw new ArgumentException("Type " + tfunc.Name + " has no constructor with signature " + ptypes.Aggregate("(", (a, x) => a + x + ',') + ")->" + type.Name);
                 body = Expression.New(Info, param);

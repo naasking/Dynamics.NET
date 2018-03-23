@@ -2,11 +2,14 @@
 using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Reflection;
 
 namespace Dynamics
 {
     public static class Constructors
     {
+        //FIXME: don't handle special associations, this is the responsibility of a dependency injector
+
         static Constructors()
         {
             Associate(typeof(IList<>), typeof(List<>));
@@ -26,17 +29,19 @@ namespace Dynamics
         /// <param name="instance">The instance type that inherits from the abstract type.</param>
         public static void Associate(Type type, Type instance)
         {
-            if (!type.IsAbstract || !type.IsInterface)
+            var tinfo = type.GetTypeInfo();
+            if (!tinfo.IsAbstract || !tinfo.IsInterface)
                 throw new ArgumentException("Argument must be an abstract or interface type.", "type");
-            if (instance.IsAbstract || instance.IsInterface)
+            var iinfo = instance.GetTypeInfo();
+            if (iinfo.IsAbstract || iinfo.IsInterface)
                 throw new ArgumentException("Argument must not be an abstract or interface type.", "instance");
-            if (!type.IsGenericTypeDefinition || !instance.IsGenericTypeDefinition)
+            if (!tinfo.IsGenericTypeDefinition || !iinfo.IsGenericTypeDefinition)
                 throw new ArgumentException("Arguments must both be generic type definitions.");
             var args = new List<int>();
-            var impl = instance.GetInterfaces().SingleOrDefault(x => x.ContainsGenericParameters && x.GetGenericTypeDefinition() == type);
+            var impl = iinfo.ImplementedInterfaces.SingleOrDefault(x => x.GetTypeInfo().ContainsGenericParameters && x.GetGenericTypeDefinition() == type);
             if (impl == null) throw new ArgumentException(instance.Name + " does not inherit from or implement " + type.Name, "instance");
-            var targs = impl.GetGenericArguments();
-            var iargs = instance.GetGenericArguments();
+            var targs = impl.GenericTypeArguments;
+            var iargs = instance.GenericTypeArguments;
             foreach (var x in targs)
                 if (x.IsGenericParameter)
                     args.Add(Array.IndexOf(iargs, x));
@@ -52,11 +57,11 @@ namespace Dynamics
         {
             var type = typeof(T);
             Tuple<Type, int[]> idef;
-            if (!type.IsGenericType || !typeMap.TryGetValue(type.GetGenericTypeDefinition(), out idef))
+            if (!type.IsConstructedGenericType || !typeMap.TryGetValue(type.GetGenericTypeDefinition(), out idef))
                 return null;
-            var targs = type.GetGenericArguments();
+            var targs = type.GenericTypeArguments;
             var instance = idef.Item1.MakeGenericType(idef.Item2.Select(x => targs[x]).ToArray());
-            var ctor = new Func<object>(Constructor<string, object>).Method.GetGenericMethodDefinition();
+            var ctor = new Func<object>(Constructor<string, object>).GetMethodInfo().GetGenericMethodDefinition();
             return (Func<T>)ctor.MakeGenericMethod(instance, type).CreateDelegate(typeof(Func<T>));
         }
 

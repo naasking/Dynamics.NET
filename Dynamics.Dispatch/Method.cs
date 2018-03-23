@@ -1,8 +1,8 @@
 ﻿using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
 namespace Dynamics
@@ -30,17 +30,17 @@ namespace Dynamics
             var tfunc = typeof(TFunc);
             if (!tfunc.Subtypes<Delegate>())
                 throw new ArgumentException(tfunc.Name + " must be a delegate type.");
-            var invoke = tfunc.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
+            var invoke = tfunc.GetRuntimeMethods().Single(x => x.Name.Equals("Invoke", StringComparison.Ordinal));
             var iparam = invoke.GetParameters();
             if (iparam.Length != 2)
                 throw new NotSupportedException("Only 2-parameter methods supported.");
             var type = iparam[1].ParameterType;
             var tvisit = iparam[0].ParameterType;
-            var tmethods = tfunc.IsGenericType && tfunc.GetGenericTypeDefinition() == typeof(TryParse<>)
+            var tmethods = tfunc.IsConstructedGenericType && tfunc.GetGenericTypeDefinition() == typeof(TryParse<>)
                          ? type.GetElementType()
                          : tvisit;
-            var typeParam = tfunc.IsGenericType && tfunc.GetGenericTypeDefinition() == typeof(TryParse<>) ? 1 : 0;
-            var methods = tmethods.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
+            var typeParam = tfunc.IsConstructedGenericType && tfunc.GetGenericTypeDefinition() == typeof(TryParse<>) ? 1 : 0;
+            var methods = tmethods.GetRuntimeMethods();
             if (!string.IsNullOrEmpty(methodName))
                 methods = methods.Where(x => methodName.Equals(x.Name, StringComparison.Ordinal)).ToArray();
             // need to order the methods from most to least specific match for T
@@ -74,7 +74,7 @@ namespace Dynamics
             var localType = Expression.Variable(typeof(Type), "type");
             var tests = new List<Expression>
             {
-                Expression.Assign(localType, Expression.Call(p, typeof(object).GetMethod("GetType")))
+                Expression.Assign(localType, Expression.Call(p, typeof(object).GetRuntimeMethod("GetType", Type.EmptyTypes)))
             };
             // build a sequence of subtype tests until type <: parameter-type
             //FIXME: if T is sealed, then we need only pick the single closest match. Perhaps

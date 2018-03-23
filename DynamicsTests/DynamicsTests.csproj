@@ -76,6 +76,10 @@
       <Project>{ff35d109-7ec8-407b-8bb4-200de77dc222}</Project>
       <Name>Dynamics.Cyclic</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Dynamics.Defaults\Dynamics.Defaults.csproj">
+      <Project>{7329306b-a6d2-49c3-9771-51d843e8bbfa}</Project>
+      <Name>Dynamics.Defaults</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Dynamics.Dispatch\Dynamics.Dispatch.csproj">
       <Project>{77ffdcc6-1965-4740-bc40-50e4501137c5}</Project>
       <Name>Dynamics.Dispatch</Name>
@@ -91,10 +95,6 @@
     <ProjectReference Include="..\Dynamics.Reflection\Dynamics.Reflection.csproj">
       <Project>{4d0914da-0c8d-48da-8445-7ec448a4ff2a}</Project>
       <Name>Dynamics.Reflection</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Dynamics.Types\Dynamics.Types.csproj">
-      <Project>{124dd5b7-62ba-47b8-9e6d-0e95bfb6f192}</Project>
-      <Name>Dynamics.Types</Name>
     </ProjectReference>
     <ProjectReference Include="..\Dynamics\Dynamics.NET.csproj">
       <Project>{8228926a-9732-4d82-9134-e6de61d03eb8}</Project>

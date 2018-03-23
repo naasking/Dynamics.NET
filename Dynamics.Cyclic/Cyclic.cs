@@ -36,9 +36,9 @@ namespace Dynamics
             }
             else
             {
-                foreach (var x in type.GetFields(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy))
+                foreach (var x in type.GetRuntimeFields())
                 {
-                    if (!type.IsPrimitive && Cycles.Yes == DetectCycles(x.FieldType, ref visited, length + 1))
+                    if (!type.GetTypeInfo().IsPrimitive && Cycles.Yes == DetectCycles(x.FieldType, ref visited, length + 1))
                         return Cycles.Yes;
                 }
             }

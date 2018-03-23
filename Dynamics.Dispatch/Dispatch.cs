@@ -1,8 +1,13 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Concurrent;
+using System.Reflection;
 
 namespace Dynamics
 {
+    /// <summary>
+    /// Bind a runtime type to a generic type variable.
+    /// </summary>
     public static class Dispatch
     {
         #region Dynamic type resolver
@@ -22,7 +27,9 @@ namespace Dynamics
             {
                 x = (Dispatcher)typeof(Case<>)
                     .MakeGenericType(type)
-                    .GetConstructor(Type.EmptyTypes)
+                    .GetTypeInfo()
+                    .DeclaredConstructors
+                    .Single(z => z.GetParameters().Length == 0)
                     .Invoke(null);
                 entries.TryAdd(type, x);
             }
