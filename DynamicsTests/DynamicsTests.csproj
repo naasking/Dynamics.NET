@@ -54,6 +54,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PocoTests.cs" />
     <Compile Include="Tests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -91,6 +92,10 @@
     <ProjectReference Include="..\Dynamics.Mutable\Dynamics.Mutable.csproj">
       <Project>{69aad124-cb85-4ab4-b859-d2d55ff82ad2}</Project>
       <Name>Dynamics.Mutable</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Dynamics.Poco\Dynamics.Poco.csproj">
+      <Project>{21c66464-fac2-4e21-848c-34e7d30579ed}</Project>
+      <Name>Dynamics.Poco</Name>
     </ProjectReference>
     <ProjectReference Include="..\Dynamics.Reflection\Dynamics.Reflection.csproj">
       <Project>{4d0914da-0c8d-48da-8445-7ec448a4ff2a}</Project>

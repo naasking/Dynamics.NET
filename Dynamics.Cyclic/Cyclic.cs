@@ -38,7 +38,8 @@ namespace Dynamics
             {
                 foreach (var x in type.GetRuntimeFields())
                 {
-                    if (!type.GetTypeInfo().IsPrimitive && Cycles.Yes == DetectCycles(x.FieldType, ref visited, length + 1))
+                    // ignore static members in circularity checks
+                    if (!x.IsStatic && !type.GetTypeInfo().IsPrimitive && Cycles.Yes == DetectCycles(x.FieldType, ref visited, length + 1))
                         return Cycles.Yes;
                 }
             }
