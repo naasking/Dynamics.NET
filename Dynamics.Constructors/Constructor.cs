@@ -58,11 +58,15 @@ namespace Dynamics
                 body = Expression.NewArrayBounds(type.GetElementType(), param);
                 Info = null;
             }
+            else if (tinfo.IsValueType && ptypes.Length == 0)
+            {
+                body = Expression.New(type);
+            }
             else
             {
                 Info = tinfo.DeclaredConstructors.SingleOrDefault(x => ptypes.SequenceEqual(x.GetParameters().Select(z => z.ParameterType)));
                 if (Info == null)
-                    throw new ArgumentException("Type " + tfunc.Name + " has no constructor with signature " + ptypes.Aggregate("(", (a, x) => a + x + ',') + ")->" + type.Name);
+                    throw new ArgumentException("Type " + type.Name + " has no constructor with signature " + ptypes.Aggregate("(", (a, x) => a + x + ',') + ")->" + type.Name);
                 body = Expression.New(Info, param);
             }
             Invoke = Expression.Lambda<TFunc>(body, param).Compile();
