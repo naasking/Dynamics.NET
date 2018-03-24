@@ -1,28 +1,34 @@
 # Dynamics.NET
 
 Extensions for efficient runtime reflection and structural induction.
-The following features are provided out of the box:
+I recently restructured the project into a number of separate assemblies
+so you can choose what to import ala-carte.
 
- * generic deep copying: Type&lt;T&gt;.Copy(T value)
- * type mutability heuristics: Type&lt;T&gt;.Mutability and Type&lt;T&gt;.IsMutable(T value)
- * precise type recursion checks: Type&lt;T&gt;.Cycles == Cycles.Yes
+The following features are available:
+
+ * generic deep copying: Copy&lt;T&gt;.DeepCopy(T value)
+ * type mutability heuristics: Mutable&lt;T&gt;.Mutability and Mutable&lt;T&gt;.IsMutable(T value)
+ * precise type recursion checks: Cyclic&lt;T&gt;.Cycles == Cycles.Yes
  * identifying fields and properties that are compiler-generated
- * simple checks for attributes on members, ie. type.Has&lt;SerializableAttribute&gt;()
  * extracting the compiler-generated fields for auto properties
  * analyzing nested generic types
  * simplified .NET types with kinding via Dynamics.Kind
  * identify and invoke constructors via Constructor<TDelegate>.Invoke() ie.
    call "new List&lt;T&gt;(count)" as Constructor&lt;Func&lt;int, List&lt;T&gt;&gt;&gt;.Invoke(count)
+ * implement efficient reflection-driven operations on POCOs/Plain Old CLR Objects
+   by implementing a simple interface
  * and more!
 
 These are functions that are useful for serialization, runtime type
 and code generation, and similar applications where type structure
 analysis is useful.
 
-The functions are provided in as efficient a form as is possible,
+The features are provided in as efficient a form as is possible,
 typically as statically cached delegates.
 
 ## Generic Visitors
+
+Nuget package name: Dynamics.Dispatch
 
 Never write double-dispatching logic ever again, and write visitors that
 can match on types which you can't modify, like System.Int32!
@@ -53,6 +59,8 @@ The only limitations right now are visitor methods with generic
 parameters, which will be integrated into a future update.
 
 ## Resolve Most-Specific Method as a Delegate
+
+Nuget package name: Dynamics.Dispatch
 
 The Dynamics.Method class lets you easily reify a static or instance
 method as a delegate. For instance, the generic visitors are simply
@@ -100,7 +108,75 @@ Method resolution is currently limited to two parameters, same as
 the visitor constraint, and TryParse is handled specially. These
 restrictions will eventually go away.
 
+## General POCO Interface
+
+Nuget package name: Dynamics.Poco
+
+This package provides a reusable abstraction that encapsulates all of the
+object traversal logic, and you must simply provide the operations to
+apply to each member. You can do so either via a delegate-driven interface
+which will work without code generation, or via a LINQ expression interface
+which will compile to efficient inline code.
+
+Here's a class that traverses any object and sums any integers it finds,
+using the delegate backend:
+
+    public sealed class Ref<T>
+    {
+        public T value;
+    }
+    public static class Sum<T>
+    {
+		// cache traversal delegates
+        public static Func<T, Ref<int>, T> Compute;
+    }
+    public sealed class DelegateSum : IDelegateTraversal<Ref<int>>
+    {
+        public Func<TObject, Ref<int>, TObject> Override<TObject>()
+        {
+            return null;
+        }
+        public ActionRef<TObject, Ref<int>> Init<TObject>()
+        {
+            return (ref TObject x, Ref<int> sum) => { };
+        }
+        public Action<TObject, Ref<int>> Class<TObject, TMember>(Func<TObject, TMember> getter, Action<TObject, TMember> setter)
+            where TObject : class
+        {
+            return (obj, sum) => Sum<TMember>.Compute(getter(obj), sum);
+        }
+        public ActionRef<TObject, Ref<int>> Struct<TObject, TMember>(FuncRef<TObject, TMember> getter, ActionRef<TObject, TMember> setter)
+            where TObject : struct
+        {
+            return (ref TObject obj, Ref<int> sum) => Sum<TMember>.Compute(getter(ref obj), sum);
+        }
+    }
+	...
+    static void RunSimpleTests(IPocoMapper<Ref<int>> tc)
+    {
+        var foo = new Foo { Index = 3, Bar = new Bar { Baz = 99 } };
+        Sum<int>.Compute = (i, r) => r.value += i;
+        Sum<string>.Compute = (x, r) => x;
+        Sum<Foo>.Compute = tc.Compile<Foo>();
+        Sum<Bar>.Compute = tc.Compile<Bar>();
+        var sum = new Ref<int>();
+        Sum<Foo>.Compute(foo, sum);
+	}
+
+This is a reducing computation which is driven by the structure of
+the object being traversed. This is called a PullMapper in Dynamics.Poco,
+because the output is being pulled from the objects. JSON serialization
+would be an example.
+
+There's also a complementary PushMapper that pushes data into objects, and
+member traversal is externally driven. For instance, single pass JSON
+deserialization is an example of this, since the member being deserialized
+is driven by the underlying JSON rather than the object structure being
+filled in.
+
 ## Mutability Analysis
+
+Nuget package name: Dynamics.Mutable
 
 This library can perform a conservative, transitive mutability analysis on
 your type. This comes in two forms, an efficient but more conservative one
@@ -127,9 +203,11 @@ of it permits mutation.
 
 ## Deep Copying
 
+Nuget package name: Dynamics.Copying
+
 Deep copying is as simple as:
 
-    var copy = Type<T>.Copy(value);
+    var copy = Copy<T>.DeepCopy(value);
 
 No copies are created for immutable types. Your type can participate in
 deep copying by implementing ICopiable&lt;T&gt;.
@@ -140,6 +218,8 @@ type.
 
 ## Cycle Checks
 
+Nuget package name: Dynamics.Dispatch
+
 Similar to mutability, this checks whether an object graph is cyclic
 or acyclic. This is sometimes useful for more efficient object graph
 traversal, to avoid the need to mark nodes that have been visited.
@@ -148,6 +228,8 @@ There is no runtime-equivalent of this method as there is with
 mutability.
 
 ## Generic Typed Constructors
+
+Nuget package name: Dynamics.Constructors
 
 The Constructor&lt;TFunc&gt; static class exposes an efficient way to
 construct instances of given types. The type TFunc is a delegate
@@ -177,6 +259,8 @@ has an empty constructor, it uses that, otherwise it falls back
 on .NET's FormatterServices.
 
 ## Kind System
+
+Nuget package name: Dynamics.Kinds
 
 .NET has a bit of a weird type system with a mix of first-class
 and second-class types that fit awkwardly together. What's worse,
@@ -234,13 +318,22 @@ and sensible. A future enhancement will add simple unification
 as an example of how much simpler this organization is, and will
 make working with type parameters much simpler.
 
-## Miscellaneous Reflection Extensions
+## Deep Subtyping Relation
 
-Some extension methods for reflection are also available:
+Nuget package name: Dynamics.NET
+
+This extension can check whether two subtypes are "deep-compatible",
+in the sense that their generic parameters unify in the most general way.
+In the normal mode it operates just like IsAssignableFrom, but the deep
+mode is available by specifying an extra parameter.
 
     // true if type x inherits from T
     Type x = ...;
     bool isSubtype = x.Subtypes(typeof(T)) || x.Subtypes<T>();
+
+## Miscellaneous Reflection Extensions
+
+Nuget package name: Dynamics.Reflection
 
     // true if 'field' is an auto-generated backing field for a property
     FieldInfo field = ...;
