@@ -118,7 +118,7 @@ apply to each member. You can do so either via a delegate-driven interface
 which will work without code generation, or via a LINQ expression interface
 which will compile to efficient inline code.
 
-Here's a class that traverses any object and sums any integers it finds,
+Here's a class that traverses any object and sums any integers it finds
 using the delegate backend:
 
     public sealed class Ref<T>
@@ -127,7 +127,7 @@ using the delegate backend:
     }
     public static class Sum<T>
     {
-		// cache traversal delegates
+        // cache traversal delegates
         public static Func<T, Ref<int>, T> Compute;
     }
     public sealed class DelegateSum : IDelegateTraversal<Ref<int>>
@@ -218,7 +218,7 @@ type.
 
 ## Cycle Checks
 
-Nuget package name: Dynamics.Dispatch
+Nuget package name: Dynamics.Cyclic
 
 Similar to mutability, this checks whether an object graph is cyclic
 or acyclic. This is sometimes useful for more efficient object graph
