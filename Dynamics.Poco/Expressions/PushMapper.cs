@@ -32,7 +32,10 @@ namespace Dynamics.Poco.Expressions
             if (ovr != null)
                 return ovr.Compile();
             var props = typeof(TObject).GetRuntimeProperties().ToArray();
-            var member = typeof(IExpressionTraversal<TContext>).GetRuntimeMethods().Single();
+            var member = typeof(IExpressionTraversal<TContext>).GetRuntimeMethod("Member", new[]
+            {
+                typeof(Expression), typeof(Expression), typeof(PropertyInfo)
+            });
             var otype = typeof(TObject);
             var obj = Expression.Parameter(otype, "obj");
             var ctxt = Expression.Parameter(typeof(TContext), "ctxt");
