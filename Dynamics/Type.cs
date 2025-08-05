@@ -557,16 +557,26 @@ namespace Dynamics
             // whole body if we haven't already compared the two reference types
             if (!type.IsValueType)
             {
-                //FIXME: maybe should add null checks too?
+                var enull = Expression.Constant(null, tobj);
+                // reference equality check ensures either both are null, and hence equal,
+                // or the following checks ensure neither are null before proceeding with
+                // the usual checks, eg. cycle detection and field-by-field equality
                 body =
                     Expression.OrElse(
-                        Expression.ReferenceEqual(x0, x1), // add a cheap reference equality check as well
-                        Expression.OrElse(
-                            Expression.Not(Expression.Call(visited, addVisited,
-                                Expression.New(typeof(ValueTuple<object, object>).GetConstructor(new[] { tobj, tobj }),
+                        Expression.ReferenceEqual(x0, x1), // add a reference equality check for early exit
+                        Expression.AndAlso(
+                            Expression.NotEqual(x0, enull), // ensure neither parameter is null
+                            Expression.AndAlso(
+                                Expression.NotEqual(x1, enull),
+                                Expression.OrElse(
+                                    Expression.Not(
+                                        Expression.Call(
+                                            visited, addVisited,
+                                            Expression.New(
+                                                typeof(ValueTuple<object, object>).GetConstructor(new[] { tobj, tobj }),
                                                 Expression.Convert(x0, tobj),
                                                 Expression.Convert(x1, tobj)))),
-                            body));
+                                    body))));
             }
             return Expression.Lambda<Func<T, T, HashSet<(object, object)>, bool>>(body, x0, x1, visited)
                              .Compile();
