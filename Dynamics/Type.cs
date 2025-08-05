@@ -566,6 +566,13 @@ namespace Dynamics
                 // reference equality check ensures either both are null, and hence equal,
                 // or the following checks ensure neither are null before proceeding with
                 // the usual checks, eg. cycle detection and field-by-field equality
+                var x02obj = Expression.Convert(x0, tobj);
+                var x12obj = Expression.Convert(x1, tobj);
+                var tupleCtor = typeof(ValueTuple<object, object>).GetConstructor(new[] { tobj, tobj });
+
+                // cycle detection is less than ideal as it adds (x0, x1) and (x1, x0) to the visited set,
+                // when we could probably do with applying some kind of order to the two objects to
+                // canonicalize the pair
                 body =
                     Expression.OrElse(
                         Expression.ReferenceEqual(x0, x1), // add a reference equality check for early exit
@@ -577,11 +584,13 @@ namespace Dynamics
                                     Expression.Not(
                                         Expression.Call(
                                             visited, addVisited,
-                                            Expression.New(
-                                                typeof(ValueTuple<object, object>).GetConstructor(new[] { tobj, tobj }),
-                                                Expression.Convert(x0, tobj),
-                                                Expression.Convert(x1, tobj)))),
-                                    body))));
+                                            Expression.New(tupleCtor, x02obj, x12obj))),
+                                    Expression.OrElse(
+                                        Expression.Not(
+                                            Expression.Call(
+                                                visited, addVisited,
+                                                Expression.New(tupleCtor, x12obj, x02obj))),
+                                            body)))));
             }
             return Expression.Lambda<Func<T, T, HashSet<(object, object)>, bool>>(body, x0, x1, visited)
                              .Compile();
