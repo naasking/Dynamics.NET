@@ -316,6 +316,8 @@ namespace Dynamics
                 if (copies.Count != bindings.Count)
                     throw new InvalidOperationException("Couldn't find appropriate constructor.");
             }
+            if (ctor == null)
+                throw new InvalidOperationException($"Couldn't find a constructor for type {type.Name} with {copies.Count} parameters.");
             return Expression.New(ctor, bindings);
         }
         #endregion
@@ -372,7 +374,8 @@ namespace Dynamics
                 || type == typeof(string)
                 || type == typeof(System.Linq.Expressions.Expression)
                 || type.Subtypes(typeof(Enum))
-                || type.Subtypes(typeof(MemberInfo));
+                || type.Subtypes(typeof(MemberInfo))
+                || type.Subtypes<TimeZoneInfo>();
         }
 
         static bool MutableBlacklist(Type type)

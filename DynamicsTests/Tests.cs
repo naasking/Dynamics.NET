@@ -104,6 +104,8 @@ namespace DynamicsTests
             IsImmutable<DateTime>();
             IsImmutable<decimal>();
             IsImmutable<string>();
+            IsImmutable<Base64FormattingOptions>();
+            IsImmutable<Base64FormattingOptions?>();
             IsImmutable<DateTimeOffset>();
             IsImmutable<DateTimeKind>();
             IsImmutable<TimeSpan>();
@@ -124,6 +126,7 @@ namespace DynamicsTests
             IsImmutable<FieldInfo>();
             IsImmutable<MemberInfo>();
             IsImmutable<MethodBase>();
+            IsImmutable<TimeZoneInfo>();
         }
         static void IsImmutable<T>()
         {
@@ -285,6 +288,7 @@ namespace DynamicsTests
                 { 3, "three" },
             },
             Enumerable.SequenceEqual);
+            IsCopied(Base64FormattingOptions.InsertLineBreaks);
             IsCopied(new Action(CopyTests), (x, y) => x.Method == y.Method && x.Target == y.Target);
 
             // check circular delegates
