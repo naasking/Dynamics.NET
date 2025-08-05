@@ -559,9 +559,9 @@ namespace Dynamics
             {
                 //FIXME: maybe should add null checks too?
                 body =
-                    Expression.Or(
+                    Expression.OrElse(
                         Expression.ReferenceEqual(x0, x1), // add a cheap reference equality check as well
-                        Expression.Or(
+                        Expression.OrElse(
                             Expression.Not(Expression.Call(visited, addVisited,
                                 Expression.New(typeof(ValueTuple<object, object>).GetConstructor(new[] { tobj, tobj }),
                                                 Expression.Convert(x0, tobj),
