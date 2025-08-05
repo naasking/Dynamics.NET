@@ -7,6 +7,7 @@ The following features are provided out of the box:
  * type mutability heuristics: Type&lt;T&gt;.Mutability and Type&lt;T&gt;.IsMutable(T value)
  * precise type recursion checks: Type&lt;T&gt;.Cycles == Cycles.Yes
  * identifying fields and properties that are compiler-generated
+ * generic structural equality checks
  * simple checks for attributes on members, ie. type.Has&lt;SerializableAttribute&gt;()
  * extracting the compiler-generated fields for auto properties
  * analyzing nested generic types
@@ -137,6 +138,14 @@ deep copying by implementing ICopiable&lt;T&gt;.
 Alternately, you can also manually override the copy function via
 Type&lt;T&gt;.OverrideCopy method if you're not able to modify an existing
 type.
+
+## Deep Structural Equality
+
+Check for structural equality of any type as simply as:
+
+    var isEq = Type<T>.Equals(obj1, obj2);
+
+This should work for any reference or value type.
 
 ## Cycle Checks
 
