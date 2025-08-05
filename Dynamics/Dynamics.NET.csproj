@@ -4,14 +4,14 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Dynamics.NET</AssemblyName>
     <RootNamespace>Dynamics</RootNamespace>
-    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Description>Extensions for efficient runtime reflection and structural induction.</Description>
     <Copyright>Sandro Magi 2018</Copyright>
     <PackageLicenseUrl>http://www.gnu.org/licenses/lgpl-2.1.txt</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/naasking/Dynamics.NET</PackageProjectUrl>
     <RepositoryUrl>https://github.com/naasking/Dynamics.NET</RepositoryUrl>
     <PackageReleaseNotes>Release for .NET standard 2.0</PackageReleaseNotes>
-    <Version>1.0.0-RC1</Version>
+    <Version>1.0.0-RC2</Version>
     <PackageId>Dynamics.NET</PackageId>
     <Authors>Sandro Magi</Authors>
     <Company>Sandro Magi</Company>

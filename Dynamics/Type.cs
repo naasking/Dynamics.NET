@@ -41,7 +41,6 @@ namespace Dynamics
         /// </summary>
         static readonly Func<T, HashSet<object>, bool> isMutable;
 
-        //FIXME: add structural equality?
         //FIXME: add structural comparison?
 
         /// <summary>
@@ -128,13 +127,20 @@ namespace Dynamics
                 return value;
             var type = value?.GetType();
             object x;
-            if (type != typeof(T))
+            if (type != typeof(T))// && typeof(T).GetGenericTypeDefinition() != typeof(Nullable<>))
             {
                 // type is a subtype of T, so dispatch to the appropriate handler
                 Func<T, Dictionary<object, object>, T> f;
                 if (!subtypeCopy.TryGetValue(type, out f))
                 {
-                    var dispatch = new Func<T, Dictionary<object, object>, T>(DispatchCopy<T>).Method
+                    // T = Nullable<TElement>, even though TElement is not a subtype
+                    MethodInfo dispatch;
+                    if (typeof(T).IsConstructedGenericType && typeof(T).GetGenericTypeDefinition() == typeof(Nullable<>))
+                        dispatch = new Func<T, Dictionary<object, object>, T>(DispatchAnyCopy<T>).Method
+                                   .GetGenericMethodDefinition()
+                                   .MakeGenericMethod(type);
+                    else
+                        dispatch = new Func<T, Dictionary<object, object>, T>(DispatchSubtypeCopy<T>).Method
                                    .GetGenericMethodDefinition()
                                    .MakeGenericMethod(type);
                     f = subtypeCopy[type] = dispatch.Create<Func<T, Dictionary<object, object>, T>>();
@@ -195,10 +201,15 @@ namespace Dynamics
         }
         
         #region Copy helpers
-        static T DispatchCopy<T0>(T value, Dictionary<object, object> refs)
+        static T DispatchSubtypeCopy<T0>(T value, Dictionary<object, object> refs)
             where T0 : T
         {
             return Type<T0>.Copy((T0)value, refs);
+        }
+
+        static T DispatchAnyCopy<T0>(T value, Dictionary<object, object> refs)
+        {
+            return (T)(object)Type<T0>.Copy((T0)(object)value, refs);
         }
 
         static Func<T, Dictionary<object, object>, T> GenerateCopy(Type type)
@@ -295,7 +306,9 @@ namespace Dynamics
                     var name = p.Name.ToLower();
                     if (!copies.TryGetValue(name, out e))
                     {
-                        e = copies.First(z => z.Value.Type == p.ParameterType && !used.Contains(z.Key)).Value;
+                        e = copies.FirstOrDefault(z => z.Value.Type == p.ParameterType && !used.Contains(z.Key)).Value;
+                        if (e == null)
+                            throw new Exception($"Couldn't find a field matching parameter {p.Name}:{p.ParameterType} in constructor {ctor.DeclaringType.Name}{ctor.Name}. Used: {string.Join(",", used)}.");
                         used.Add(name); // ensure same member isn't used twice
                     }
                     bindings.Add(e);
@@ -370,6 +383,16 @@ namespace Dynamics
 
         static Mutability TransitiveMutability(Type type, out Func<T, HashSet<object>, bool> isMutable)
         {
+            // Nullable<TElement> inherits the mutability of TElement
+            if (type.IsConstructedGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+            {
+                // if T is Nullable<TElement>, then dispatch to TElement
+                var et = type.GetGenericArguments()[0];
+                var f = typeof(Type<>).MakeGenericType(et).GetField("Mutability");
+                isMutable = null;
+                return (Mutability)f.GetValue(null);
+            }
+
             // sealed types are immutable if they have init-only fields and all fields are immutable
             // non-sealed types may not be immutable, and so generate a residual program to check the dynamic state
             var typeMutable = typeof(Type<>).GetField("Mutability");

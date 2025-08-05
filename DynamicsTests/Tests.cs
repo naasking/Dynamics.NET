@@ -87,9 +87,10 @@ namespace DynamicsTests
         }
 
         [Fact]
-        static void CheckImmutable()
+        public static void CheckImmutable()
         {
             IsImmutable<int>();
+            IsImmutable<int?>();
             IsImmutable<uint>();
             IsImmutable<float>();
             IsImmutable<short>();
@@ -210,8 +211,9 @@ namespace DynamicsTests
             }
         }
         [Fact]
-        static void RuntimeMutable()
+        public static void RuntimeMutable()
         {
+            IsImmutable(new int?(3));
             IsImmutable(new MaybeMut());
             IsMutable<MaybeMut>(new DefMut());
             IsImmutable(new TransitiveField<object>("foo"));
