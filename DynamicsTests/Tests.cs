@@ -159,7 +159,7 @@ namespace DynamicsTests
             }
         }
         [Fact]
-        static void CheckMutable()
+        public static void CheckMutable()
         {
             IsMutable<int[]>();
             IsMutable<MutField>();
@@ -181,7 +181,7 @@ namespace DynamicsTests
             readonly int field;
         }
         [Fact]
-        static void CheckMaybeMutable()
+        public static void CheckMaybeMutable()
         {
             IsMaybeMutable<object>();
             IsMaybeMutable<MaybeMut>();
@@ -218,6 +218,7 @@ namespace DynamicsTests
         {
             IsImmutable(new int?(3));
             IsImmutable(new MaybeMut());
+            IsMutable<int[]>(new int[3]);
             IsMutable<MaybeMut>(new DefMut());
             IsImmutable(new TransitiveField<object>("foo"));
             IsMutable(new TransitiveField<object>(new[] { 2, 3 }));
@@ -314,7 +315,7 @@ namespace DynamicsTests
 
         #region Check circularity
         [Fact]
-        static void CircularityTests()
+        public static void CircularityTests()
         {
             IsAcyclic<int>();
             IsAcyclic<string>();
@@ -337,7 +338,7 @@ namespace DynamicsTests
 
         #region Constructor tests
         [Fact]
-        static void CheckConstructors()
+        public static void CheckConstructors()
         {
             var x = Constructor<Func<int, int[]>>.Invoke(89);
             Assert.Equal(89, x.Length);
@@ -380,7 +381,7 @@ namespace DynamicsTests
             public int X { get { return x; } }
         }
         [Fact]
-        static void TestBackingFields()
+        public static void TestBackingFields()
         {
             var field = typeof(ROProperty).GetFields(BindingFlags.NonPublic | BindingFlags.Instance)[0];
             var prop = typeof(ROProperty).GetProperty(nameof(ROProperty.X));
@@ -422,7 +423,7 @@ namespace DynamicsTests
             }
         }
         [Fact]
-        static void TestDynamicDispatch()
+        public static void TestDynamicDispatch()
         {
             DispatchMatch<int>();
             DispatchMatch<object>();
@@ -459,7 +460,7 @@ namespace DynamicsTests
             }
         }
         [Fact]
-        static void TestVisitor()
+        public static void TestVisitor()
         {
             Assert.NotNull(Visitor<IVisitor, int>.Invoke);
             Assert.NotNull(Visitor<IVisitor, string>.Invoke);
@@ -476,7 +477,7 @@ namespace DynamicsTests
             public static readonly Func<StringBuilder, T, StringBuilder> Invoke = Method.Resolve<Func<StringBuilder, T, StringBuilder>>("Append");
         }
         [Fact]
-        static void TestStringBuilderVisitor()
+        public static void TestStringBuilderVisitor()
         {
             var buf = new StringBuilder();
             AppendOverload<int>.Invoke(buf, 3);
@@ -494,7 +495,7 @@ namespace DynamicsTests
             public static readonly TryParse<T> TryParse = Method.Resolve<TryParse<T>>();
         }
         [Fact]
-        static void TestMethodResolution()
+        public static void TestMethodResolution()
         {
             int i;
             Assert.True(Parse<int>.TryParse("345", out i));
@@ -507,7 +508,7 @@ namespace DynamicsTests
 
         #region Generic type associations
         [Fact]
-        static void TestDynamicGenerics()
+        public static void TestDynamicGenerics()
         {
             var list = Type<IList<int>>.Create();
             Assert.NotNull(list);
