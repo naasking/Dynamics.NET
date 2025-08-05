@@ -25,7 +25,7 @@ namespace Dynamics
         /// a series of runtime tests is dynamically generated.
         /// </remarks>
         public static TFunc Resolve<TFunc>(string methodName = null)
-            where TFunc : class
+            where TFunc : Delegate
         {
             var tfunc = typeof(TFunc);
             if (!tfunc.Subtypes<Delegate>())

@@ -12,9 +12,9 @@ namespace Dynamics.Poco.Delegates
     /// <remarks>
     /// This mapper traverses an object structurally.
     /// </remarks>
-    public class PullMapper<TContext> : IPocoMapper<TContext>
+    public readonly struct PullMapper<TContext> : IPocoMapper<TContext>
     {
-        IDelegateTraversal<TContext> builder;
+        readonly IDelegateTraversal<TContext> builder;
 
         public PullMapper(IDelegateTraversal<TContext> builder)
         {
