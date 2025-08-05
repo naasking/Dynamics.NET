@@ -64,7 +64,8 @@ namespace Dynamics
         /// <summary>
         /// Used to dispatch to the dynamic type to copy.
         /// </summary>
-        static readonly ConcurrentDictionary<Type, Func<T, Dictionary<object, object>, T>> subtypeCopy = new ConcurrentDictionary<Type, Func<T, Dictionary<object, object>, T>>();
+        static readonly ConcurrentDictionary<Type, Func<T, Dictionary<object, object>, T>> subtypeCopy =
+            new ConcurrentDictionary<Type, Func<T, Dictionary<object, object>, T>>();
 
         static Type()
         {
@@ -90,6 +91,8 @@ namespace Dynamics
             Cycles = DetectCycles(type, ref visited, 0);
             
             deepCopy = Mutability == Mutability.Immutable ? null : GenerateCopy(type);
+
+            structuralEquals = StructuralEquality();
         }
 
         /// <summary>
@@ -147,6 +150,20 @@ namespace Dynamics
                 return deepCopy(value, refs);
             }
         }
+
+        static internal Func<T, T, HashSet<(object, object)>, bool> structuralEquals;
+
+        /// <summary>
+        /// Structural equality check.
+        /// </summary>
+        public static bool StructuralEquals(T x0, T x1) =>
+            structuralEquals(x0, x1, new HashSet<(object, object)>());
+
+        ///// <summary>
+        ///// Structural equality check.
+        ///// </summary>
+        //public static Func<T, T, bool> StructuralEquals(T x0, T x1, HashSet<object> visited) =>
+        //    structuralEquals(x0, x1, visited);
 
         /// <summary>
         /// Override the default auto-generated copy method with a more efficient one.
@@ -459,6 +476,74 @@ namespace Dynamics
                     return true;
             }
             return false;
+        }
+        #endregion
+
+        #region Structural equality helpers
+        static Func<T, T, HashSet<(object, object)>, bool> StructuralEquality()
+        {
+            //FIXME: consider whether to use IEquatable<T> if the type is a struct
+            var type = typeof(T);
+
+            if (type.IsPrimitive)
+            {
+                // primitive types are always equal by value, so return a trivial equality check
+                return (a0, a1, v) => EqualityComparer<T>.Default.Equals(a0, a1);
+            }
+            else if (type.IsArray)
+            {
+                var et = type.GetElementType();
+                var atype = typeof(Arrays<>).MakeGenericType(et);
+                var eq = atype.GetMethod("StructuralEquals", BindingFlags.Static | BindingFlags.Public);
+                return eq.Create<Func<T, T, HashSet<(object, object)>, bool>>();
+            }
+            // build a field-by-field equality comparison, ensuring we add any reference
+            // types to 'visited' to avoid infinite recursion
+
+            //FIXME: if a field is an interface type, then it has no members and we currently skip it,
+            //however if it's an IEnumerable type, then we could in principle check it element-wise.
+            //The ideal option would be a dynamic dispatch to a type-specific equality check, but the
+            //point of this API is to be fast type-specific operations.
+
+            var x0 = Expression.Parameter(typeof(T), "x0");
+            var x1 = Expression.Parameter(typeof(T), "x1");
+            
+            var members = typeof(T).GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+            if (members.Length == 0)
+                return (a0, a1, v) => true;
+            var visited = Expression.Parameter(typeof(HashSet<(object, object)>), "visited");
+            var addVisited = visited.Type.GetMethod("Add");
+            var tobj = typeof(object);
+            Expression body = Expression.Constant(true);
+            foreach (var f in members)
+            {
+                var ft = typeof(Type<>).MakeGenericType(f.FieldType);
+                var eq = ft.GetField("structuralEquals", BindingFlags.NonPublic | BindingFlags.Static);
+                // construct a sequence of equality checks connected by &&
+                var call = Expression.Invoke(
+                    Expression.Field(null, eq),
+                    Expression.Field(x0, f),
+                    Expression.Field(x1, f),
+                    visited);
+                body = Expression.AndAlso(body, call);
+            }
+            // if a value type then always check all fields, otherwise only eval the
+            // whole body if we haven't already compared the two reference types
+            if (!type.IsValueType)
+            {
+                //FIXME: maybe should add null checks too?
+                body =
+                    Expression.Or(
+                        Expression.ReferenceEqual(x0, x1), // add a cheap reference equality check as well
+                        Expression.Or(
+                            Expression.Not(Expression.Call(visited, addVisited,
+                                Expression.New(typeof(ValueTuple<object, object>).GetConstructor(new[] { tobj, tobj }),
+                                                Expression.Convert(x0, tobj),
+                                                Expression.Convert(x1, tobj)))),
+                            body));
+            }
+            return Expression.Lambda<Func<T, T, HashSet<(object, object)>, bool>>(body, x0, x1, visited)
+                             .Compile();
         }
         #endregion
     }

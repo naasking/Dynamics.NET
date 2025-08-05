@@ -512,5 +512,50 @@ namespace DynamicsTests
             Assert.True(dict is Dictionary<int, string>);
         }
         #endregion
+
+        #region Structural equality checks
+        [Fact]
+        public static void StructuralEqualityList()
+        {
+            var x = new List<int> { 1, 2, 3 };
+            var copy = Type<List<int>>.Copy(x);
+            Assert.True(Type<List<int>>.StructuralEquals(x, copy));
+
+            copy[1] = 0;
+            Assert.False(Type<List<int>>.StructuralEquals(x, copy));
+        }
+
+        [Fact]
+        public static void StructuralEqualityPrimitives()
+        {
+            var x = 1;
+            Assert.True(Type<int>.StructuralEquals(x, x));
+            Assert.True(Type<int>.StructuralEquals(x, 1));
+            Assert.False(Type<int>.StructuralEquals(x, 2));
+
+            var array = new[] { 1, 2, 3 };
+            var array2 = new[] { 1, 2, 3 };
+            Assert.True(Type<int[]>.StructuralEquals(array, array2));
+            Assert.True(Type<int[]>.StructuralEquals(array, new[] { 1, 2, 3 }));
+            Assert.False(Type<int[]>.StructuralEquals(array, new[] { 2, 2, 3 }));
+
+            var d = 23M;
+            Assert.True(Type<decimal>.StructuralEquals(2, 2));
+            Assert.True(Type<decimal>.StructuralEquals(d, 23));
+            Assert.False(Type<decimal>.StructuralEquals(d, 22M));
+        }
+
+        [Fact]
+        public static void HashSetTupleEquality()
+        {
+            var x = new List<int> { 1, 2, 3 };
+            var copy = Type<List<int>>.Copy(x);
+            var tuple = (x as object, copy as object);
+            var set = new HashSet<(object, object)>();
+
+            Assert.True(set.Add(tuple));
+            Assert.False(set.Add((x as object, copy as object)));
+        }
+        #endregion
     }
 }
