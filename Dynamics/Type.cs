@@ -541,7 +541,7 @@ namespace Dynamics
                 members.AddRange(current.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
             }
             if (members.Count == 0)
-                return (a0, a1, v) => true;
+                return (a0, a1, v) => ReferenceEquals(a0, a1) || (a0 != null && a1 != null);
             var visited = Expression.Parameter(typeof(HashSet<(object, object)>), "visited");
             var addVisited = visited.Type.GetMethod("Add");
             var tobj = typeof(object);

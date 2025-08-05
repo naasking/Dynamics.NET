@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Collections.ObjectModel;
 using Dynamics;
 using Xunit;
+using System.Threading;
 
 namespace DynamicsTests
 {
@@ -563,6 +564,63 @@ namespace DynamicsTests
             Assert.True(set.Add(tuple));
             Assert.False(set.Add((x as object, copy as object)));
         }
+
+        [Fact]
+        public static void StructuralEqualityComplex()
+        {
+            var foo1 = new FooEq { Prop = 1, Bar = new BarEq { Prop = 2, Name = "foo" } };
+            var foo2 = new FooEq { Prop = 1, Bar = new BarEq { Prop = 2, Name = "foo" } };
+            Assert.True(Type<FooEq>.StructuralEquals(foo1, foo2));
+            foo2.Bar.Name = "bar";
+            Assert.False(Type<FooEq>.StructuralEquals(foo1, foo2));
+            foo2.Bar = foo1.Bar;
+            Assert.True(Type<FooEq>.StructuralEquals(foo1, foo2));
+        }
+
+        [Fact]
+        public static void StructuralEqualityCycles()
+        {
+            var bar1 = new BarEq { Prop = 2, Name = "foo" };
+            var bar2 = new BarEq { Prop = 2, Name = "foo" };
+            Assert.True(Type<BarEq>.StructuralEquals(bar1, bar2));
+
+            var foo1 = new FooEq { Prop = 1, Bar = new BarEq { Prop = 2, Name = "foo" } };
+            var foo2 = new FooEq { Prop = 1, Bar = new BarEq { Prop = 2, Name = foo1.Bar.Name } };
+            Assert.True(Type<FooEq>.StructuralEquals(foo1, foo2));
+            foo2.Bar.Name = "bar";
+            Assert.False(Type<FooEq>.StructuralEquals(foo1, foo2));
+            foo2.Bar = foo1.Bar;
+            Assert.True(Type<FooEq>.StructuralEquals(foo1, foo2));
+        }
+
+        [Fact]
+        public static void StructuralEqualityCyclesWithNull()
+        {
+            var x = new CylesEq { Name = "foo", Recursive = null };
+            Assert.True(Type<CylesEq>.StructuralEquals(x, x));
+            var y = new CylesEq { Name = "foo", Recursive = x };
+            Assert.False(Type<CylesEq>.StructuralEquals(x, y));
+            Assert.True(Type<CylesEq>.StructuralEquals(y, y));
+        }
+
+        class FooEq
+        {
+            public int Prop { get; set; }
+            public BarEq Bar { get; set; }
+        }
+
+        public class BarEq
+        {
+            public int Prop { get; set; }
+            public string Name { get; set; }
+        }
+
+        class CylesEq
+        {
+            public string Name { get; set; }
+            public object Recursive { get; set; }
+        }
+
         #endregion
     }
 }
