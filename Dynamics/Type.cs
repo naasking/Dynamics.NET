@@ -511,7 +511,7 @@ namespace Dynamics
             //FIXME: consider whether to use IEquatable<T> if the type is a struct
             var type = typeof(T);
 
-            if (type.IsPrimitive)
+            if (type.IsPrimitive || type.IsEnum || type == typeof(string) || type == typeof(decimal))
             {
                 // primitive types are always equal by value, so return a trivial equality check
                 return (a0, a1, v) => EqualityComparer<T>.Default.Equals(a0, a1);
