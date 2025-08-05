@@ -533,9 +533,14 @@ namespace Dynamics
 
             var x0 = Expression.Parameter(typeof(T), "x0");
             var x1 = Expression.Parameter(typeof(T), "x1");
-            
-            var members = typeof(T).GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
-            if (members.Length == 0)
+
+            // construct a list of all fields going back to the base type
+            var members = new List<FieldInfo>();
+            for (var current = type; current != null && current != typeof(object); current = current.BaseType)
+            {
+                members.AddRange(current.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
+            }
+            if (members.Count == 0)
                 return (a0, a1, v) => true;
             var visited = Expression.Parameter(typeof(HashSet<(object, object)>), "visited");
             var addVisited = visited.Type.GetMethod("Add");
