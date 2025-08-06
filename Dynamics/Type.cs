@@ -125,7 +125,7 @@ namespace Dynamics
                 return value;
             var type = value?.GetType();
             object x;
-            if (type != typeof(T))// && typeof(T).GetGenericTypeDefinition() != typeof(Nullable<>))
+            if (type != typeof(T))
             {
                 // type is a subtype of T, so dispatch to the appropriate handler
                 Func<T, Dictionary<object, object>, T> f;
@@ -254,8 +254,8 @@ namespace Dynamics
                        .MakeGenericMethod(type)
                        .Create<Func<T, Dictionary<object, object>, T>>();
             // if type has a method in Copying static class, then dispatch to that
-            var matchName = type.IsGenericType        ? type.Name.Remove(type.Name.Length - 2):
-                                                        type.Name;
+            var matchName = type.IsGenericType ? type.Name.Remove(type.Name.Length - 2):
+                                                 type.Name;
             var match = Copying.Methods
                         .SingleOrDefault(m => m.Name.Equals(matchName, StringComparison.Ordinal)
                                            && (m.ReturnType == type || m.ReturnType.ContainsGenericParameters && type.IsGenericType));
@@ -307,12 +307,15 @@ namespace Dynamics
             ConstructorInfo ctor = null;
             var bindings = new List<Expression>();  // constructor parameter bindings
             var used = new HashSet<string>();       // tracks used members from 'copies'
+            // search for best-fit constructor
             foreach (var x in ctors)
             {
                 ctor = x;
                 var args = x.GetParameters();
-                if (args.Length != copies.Count)
-                    continue;
+                //// a self-referential readonly field can be initialized with 'this',
+                ///so the # of params don't have to strictly equal # of bindings
+                //if (args.Length != copies.Count)
+                //    continue;
                 bindings.Clear();
                 used.Clear();
                 foreach (var p in args)
@@ -329,10 +332,17 @@ namespace Dynamics
                     }
                     bindings.Add(e);
                 }
-                if (copies.Count != bindings.Count)
-                    throw new InvalidOperationException("Couldn't find appropriate constructor.");
+                //if (copies.Count != bindings.Count)
+                //    throw new InvalidOperationException("Couldn't find appropriate constructor.");
             }
-            if (ctor == null)
+            var cparams = ctor.GetParameters();
+
+            // Assume a self-referential readonly field where the number of parameters of type 'T' don't
+            // match the number of readonly fields of T is initializing itself with 'this', so eliminate
+            // the binding for that parameter. This is a bit of a hack since I might eliminate the wrong param.
+            if (cparams.Length != bindings.Count && bindings.Count(x => x.Type == type) != cparams.Count(x => x.ParameterType == type))
+                bindings.Remove(bindings.First(x => x.Type == type));
+            if (ctor == null || cparams.Length != bindings.Count)
                 throw new InvalidOperationException($"Couldn't find a constructor for type {type.Name} with {copies.Count} parameters.");
             return Expression.New(ctor, bindings);
         }
@@ -545,7 +555,8 @@ namespace Dynamics
             //FIXME: if a field is an interface type, then it has no members and we currently skip it,
             //however if it's an IEnumerable type, then we could in principle check it element-wise.
             //The ideal option would be a dynamic dispatch to a type-specific equality check, but the
-            //point of this API is to be fast type-specific operations.
+            //point of this API is to be fast type-specific operations. Actually, for interfaces we
+            //could just compare all public properties that have getters.
 
             var x0 = Expression.Parameter(typeof(T), "x0");
             var x1 = Expression.Parameter(typeof(T), "x1");
