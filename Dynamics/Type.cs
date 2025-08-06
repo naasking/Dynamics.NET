@@ -155,7 +155,7 @@ namespace Dynamics
             }
         }
 
-        static internal Func<T, T, HashSet<(object, object)>, bool> structuralEquals;
+        static Func<T, T, HashSet<(object, object)>, bool> structuralEquals;
 
         /// <summary>
         /// Structural equality check.

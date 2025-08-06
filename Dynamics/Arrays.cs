@@ -23,7 +23,7 @@ namespace Dynamics
                 return false;
             for (int i = 0; i < a0.Length; i++)
             {
-                if (!Type<T>.structuralEquals(a0[i], a1[i], visited))
+                if (!Type<T>.StructuralEquals(a0[i], a1[i], visited))
                     return false;
             }
             return true;
