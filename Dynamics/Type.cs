@@ -90,8 +90,6 @@ namespace Dynamics
             Cycles = DetectCycles(type, ref visited, 0);
             
             deepCopy = Mutability == Mutability.Immutable ? null : GenerateCopy(type);
-
-            structuralEquals = StructuralEquality();
         }
 
         /// <summary>
@@ -162,8 +160,26 @@ namespace Dynamics
         /// <summary>
         /// Structural equality check.
         /// </summary>
-        public static bool StructuralEquals(T x0, T x1) =>
-            structuralEquals(x0, x1, new HashSet<(object, object)>());
+        public static bool StructuralEquals(T x0, T x1)
+        {
+            // this is a lazy initialization to avoid an infinite regress between two
+            // mutually recursive class definitions, eg. class A { B b; } and class B { A a; }
+            if (structuralEquals == null)
+                structuralEquals = StructuralEquality();
+            return structuralEquals(x0, x1, new HashSet<(object, object)>());
+        }
+
+        /// <summary>
+        /// Structural equality check.
+        /// </summary>
+        internal static bool StructuralEquals(T x0, T x1, HashSet<(object, object)> visited)
+        {
+            // this is a lazy initialization to avoid an infinite regress between two
+            // mutually recursive class definitions, eg. class A { B b; } and class B { A a; }
+            if (structuralEquals == null)
+                structuralEquals = StructuralEquality();
+            return structuralEquals(x0, x1, new HashSet<(object, object)>());
+        }
 
         ///// <summary>
         ///// Structural equality check.
@@ -549,10 +565,11 @@ namespace Dynamics
             foreach (var f in members)
             {
                 var ft = typeof(Type<>).MakeGenericType(f.FieldType);
-                var eq = ft.GetField("structuralEquals", BindingFlags.NonPublic | BindingFlags.Static);
+                var eq = ft.GetMethod("StructuralEquals", BindingFlags.NonPublic | BindingFlags.Static,
+                                      Type.DefaultBinder, new[] { f.FieldType, f.FieldType, typeof(HashSet<(object,object)>) }, null);
                 // construct a sequence of equality checks connected by &&
-                var call = Expression.Invoke(
-                    Expression.Field(null, eq),
+                var call = Expression.Call(
+                    eq,
                     Expression.Field(x0, f),
                     Expression.Field(x1, f),
                     visited);
