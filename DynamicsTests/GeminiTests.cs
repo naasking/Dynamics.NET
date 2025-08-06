@@ -931,5 +931,126 @@ namespace DynamicsTests
         //    // copied node points to the copied node itself, not the original node or null.
         //    Assert.Same(copiedNode, copiedNode.Next);
         //}
+
+        // --- Test Data Structures for Tuples and ValueTuples ---
+
+        class TupleContainer
+        {
+            // A simple Tuple
+            public Tuple<int, string> SimpleTuple;
+
+            // A simple ValueTuple
+            public ValueTuple<double, bool> SimpleValueTuple;
+
+            // A collection of Tuples
+            public List<Tuple<int, SimpleClass>> ListOfTuples;
+
+            // A collection of ValueTuples
+            public ValueTuple<string, int>[] ArrayOfValueTuples;
+
+            // A nested structure
+            public Tuple<int, ValueTuple<string, SimpleClass>> NestedMixedTuples;
+        }
+
+        // --- New XUnit Tests for Tuples and ValueTuples ---
+
+        [Fact]
+        public void SimpleTupleAndValueTuple_CopyAndCompare_ShouldBeEqual()
+        {
+            // Arrange
+            var original = new TupleContainer
+            {
+                SimpleTuple = new Tuple<int, string>(1, "Apple"),
+                SimpleValueTuple = new ValueTuple<double, bool>(3.14, true)
+            };
+
+            // Act
+            var copy = Type<TupleContainer>.Copy(original);
+
+            // Assert
+            Assert.True(Type<TupleContainer>.StructuralEquals(original, copy),
+                "A copy of a container with simple tuples should be structurally equal.");
+
+            // Sanity check: ensure they are distinct instances
+            Assert.NotSame(original.SimpleTuple, copy.SimpleTuple);
+        }
+
+        [Fact]
+        public void CollectionsOfTuples_CopyAndCompare_ShouldBeEqual()
+        {
+            // Arrange
+            var original = new TupleContainer
+            {
+                ListOfTuples = new List<Tuple<int, SimpleClass>>
+                {
+                    Tuple.Create(1, new SimpleClass { Id = 101, Name = "A" }),
+                    Tuple.Create(2, new SimpleClass { Id = 102, Name = "B" })
+                },
+                ArrayOfValueTuples = new (string, int)[]
+                {
+                    ("X", 10),
+                    ("Y", 20)
+                }
+            };
+
+            // Act
+            var copy = Type<TupleContainer>.Copy(original);
+
+            // Assert
+            Assert.True(Type<TupleContainer>.StructuralEquals(original, copy),
+                "A copy of a container with collections of tuples should be structurally equal.");
+
+            // Diagnostic checks to ensure deep copy
+            Assert.NotSame(original.ListOfTuples, copy.ListOfTuples);
+            Assert.NotSame(original.ListOfTuples[0], copy.ListOfTuples[0]);
+            Assert.NotSame(original.ListOfTuples[0].Item2, copy.ListOfTuples[0].Item2);
+        }
+
+
+        [Fact]
+        public void NestedMixedTuples_CopyAndCompare_ShouldBeEqual()
+        {
+            // Arrange
+            var original = new TupleContainer
+            {
+                NestedMixedTuples = Tuple.Create(
+                    123,
+                    ValueTuple.Create("Nested", new SimpleClass { Id = 999, Name = "Deep" })
+                )
+            };
+
+            // Act
+            var copy = Type<TupleContainer>.Copy(original);
+
+            // Assert
+            Assert.True(Type<TupleContainer>.StructuralEquals(original, copy),
+                "A copy of a container with nested and mixed tuples should be structurally equal.");
+
+            // Diagnostic checks for deep copy integrity
+            Assert.NotSame(original.NestedMixedTuples, copy.NestedMixedTuples);
+            Assert.NotSame(original.NestedMixedTuples.Item2.Item2, copy.NestedMixedTuples.Item2.Item2);
+        }
+
+        [Fact]
+        public void TuplesWithNulls_CopyAndCompare_ShouldBeEqual()
+        {
+            // Arrange
+            var original = new TupleContainer
+            {
+                ListOfTuples = new List<Tuple<int, SimpleClass>>
+        {
+            Tuple.Create(1, new SimpleClass { Id = 101 }),
+            null, // A null tuple in the list
+            Tuple.Create(3, (SimpleClass)null) // A tuple with a null item
+        }
+            };
+
+            // Act
+            var copy = Type<TupleContainer>.Copy(original);
+
+            // Assert
+            Assert.True(Type<TupleContainer>.StructuralEquals(original, copy),
+                "A copy of a container with tuples and nulls should be structurally equal.");
+        }
     }
 }
