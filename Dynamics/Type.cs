@@ -178,7 +178,7 @@ namespace Dynamics
             // mutually recursive class definitions, eg. class A { B b; } and class B { A a; }
             if (structuralEquals == null)
                 structuralEquals = StructuralEquality();
-            return structuralEquals(x0, x1, new HashSet<(object, object)>());
+            return structuralEquals(x0, x1, visited);
         }
 
         ///// <summary>

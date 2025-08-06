@@ -172,6 +172,7 @@ namespace DynamicsTests
             var node4 = new CyclicNode { Name = "A" };
             // node4.Next is null (acyclic)
 
+            Assert.True(Type<CyclicNode>.StructuralEquals(node1, node1)); // Two identical cycles are equal
             Assert.True(Type<CyclicNode>.StructuralEquals(node1, node2)); // Two identical cycles are equal
             Assert.False(Type<CyclicNode>.StructuralEquals(node1, node3)); // Different data in cycle
             Assert.False(Type<CyclicNode>.StructuralEquals(node1, node4)); // Cyclic vs Acyclic
