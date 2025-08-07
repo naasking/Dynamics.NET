@@ -216,6 +216,12 @@ namespace Dynamics
         /// that property is now "". This will detect that the object has changed when it observably
         /// hasn't. You could work around this by ensuring all properties are non-null at all times of
         /// course, but it's simpler to integrate change detection by overriding the default string equality.
+        /// 
+        /// The override function for reference types should have the following structure:
+        /// <code>
+        /// Dynamics.Type&lt;string&gt;.OverrideStructuralEquals(
+        ///     (x, y, visited) =&gt; ReferenceEquals(x,y) || (x != null &amp;&amp; y != null &amp;&amp; [...enter custom clause...])
+        /// </code>
         /// </remarks>
         public static void OverrideStructuralEquals(Func<T, T, HashSet<(object, object)>, bool> equals)
         {
