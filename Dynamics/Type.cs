@@ -206,6 +206,23 @@ namespace Dynamics
         }
 
         /// <summary>
+        /// Allow manual overriding of the structural equality check.
+        /// </summary>
+        /// <param name="equals">The structural equality function to use for type <typeparamref name="T"/>.</param>
+        /// <remarks>
+        /// This is most useful for types like <see cref="System.String"/> in which you may want to
+        /// equate the empty string and null. For instance, in a Blazor app you may load a view model
+        /// that has string properties that are null, then you enter some text and delete the text, and
+        /// that property is now "". This will detect that the object has changed when it observably
+        /// hasn't. You could work around this by ensuring all properties are non-null at all times of
+        /// course, but it's simpler to integrate change detection by overriding the default string equality.
+        /// </remarks>
+        public static void OverrideStructuralEquals(Func<T, T, HashSet<(object, object)>, bool> equals)
+        {
+            structuralEquals = equals;
+        }
+
+        /// <summary>
         /// Checks a value's mutability.
         /// </summary>
         /// <param name="value">The value to check for mutability.</param>
