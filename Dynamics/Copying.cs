@@ -114,8 +114,8 @@ namespace Dynamics
             return copy;
         }
 
-        public static T? Nullable<T>(T value, Dictionary<object, object> refs)
+        public static T? Nullable<T>(T? value, Dictionary<object, object> refs)
             where T : struct =>
-            new T?(Type<T>.Copy(value, refs));
+            value == null ? value : new T?(Type<T>.Copy(value.Value, refs));
     }
 }
