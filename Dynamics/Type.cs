@@ -350,7 +350,7 @@ namespace Dynamics
                     {
                         e = copies.FirstOrDefault(z => z.Value.Type == p.ParameterType && !used.Contains(z.Key)).Value;
                         if (e == null)
-                            throw new Exception($"Couldn't find a field matching parameter {p.Name}:{p.ParameterType} in constructor {ctor.DeclaringType.Name}{ctor.Name}. Used: {string.Join(",", used)}.");
+                            throw new Exception($"Couldn't find a field matching parameter '{p.Name}':'{p.ParameterType}' in constructor {ctor.DeclaringType.Name}{ctor.Name}. Used: {string.Join(",", used)}.");
                         used.Add(name); // ensure same member isn't used twice
                     }
                     bindings.Add(e);

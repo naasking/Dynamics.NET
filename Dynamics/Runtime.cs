@@ -755,6 +755,8 @@ namespace Dynamics
         internal static bool StructuralEquals<TObj, TItem>(TObj first, TObj second, HashSet<(object, object)> visited)
             where TObj : IEnumerable<TItem>
         {
+            if (first == null && second != null || second == null && first != null)
+                return false;
             if (ReferenceEquals(first, second) || !visited.Add((first, second)) || !visited.Add((second, first)))
                 return true;
             using (var enum1 = first.GetEnumerator())
@@ -765,7 +767,7 @@ namespace Dynamics
                     {
                         if (!enum2.MoveNext())
                             return false;
-                        if (!Type<TItem>.StructuralEquals(enum1.Current, enum2.Current))
+                        if (!Type<TItem>.StructuralEquals(enum1.Current, enum2.Current, visited))
                             return false;
                     }
                     return !enum2.MoveNext();

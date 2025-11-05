@@ -11,7 +11,7 @@
     <PackageProjectUrl>https://github.com/naasking/Dynamics.NET</PackageProjectUrl>
     <RepositoryUrl>https://github.com/naasking/Dynamics.NET</RepositoryUrl>
     <PackageReleaseNotes>Release for .NET standard 2.0</PackageReleaseNotes>
-    <Version>1.0.0-RC2</Version>
+    <Version>1.0.0-RC4</Version>
     <PackageId>Dynamics.NET</PackageId>
     <Authors>Sandro Magi</Authors>
     <Company>Sandro Magi</Company>

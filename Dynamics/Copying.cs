@@ -113,5 +113,9 @@ namespace Dynamics
             refs[source] = copy;
             return copy;
         }
+
+        public static T? Nullable<T>(T value, Dictionary<object, object> refs)
+            where T : struct =>
+            new T?(Type<T>.Copy(value, refs));
     }
 }

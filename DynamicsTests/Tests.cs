@@ -277,6 +277,7 @@ namespace DynamicsTests
         static void CopyTests()
         {
             IsCopied(0);
+            IsCopied(new int?(0));
             IsShared("foo");
             IsCopied(new DefMut { Bar = "Hello World" }, (x, y) => x.Bar == y.Bar);
             IsCopied(new EquatableSeq<int>(2, 3));
