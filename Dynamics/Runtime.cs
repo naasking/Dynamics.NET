@@ -741,5 +741,36 @@ namespace Dynamics
             return Type<TInstance>.Create();
         }
         #endregion
+
+        /// <summary>
+        /// Check for structural equality of a sequence.
+        /// </summary>
+        /// <typeparam name="TObj"></typeparam>
+        /// <typeparam name="TItem"></typeparam>
+        /// <param name="first"></param>
+        /// <param name="second"></param>
+        /// <param name="visited"></param>
+        /// <returns></returns>
+        /// <remarks>Compare enumerable values element-wise for structural equality.</remarks>
+        internal static bool StructuralEquals<TObj, TItem>(TObj first, TObj second, HashSet<(object, object)> visited)
+            where TObj : IEnumerable<TItem>
+        {
+            if (ReferenceEquals(first, second) || !visited.Add((first, second)) || !visited.Add((second, first)))
+                return true;
+            using (var enum1 = first.GetEnumerator())
+            {
+                using (var enum2 = second.GetEnumerator())
+                {
+                    while (enum1.MoveNext())
+                    {
+                        if (!enum2.MoveNext())
+                            return false;
+                        if (!Type<TItem>.StructuralEquals(enum1.Current, enum2.Current))
+                            return false;
+                    }
+                    return !enum2.MoveNext();
+                }
+            }
+        }
     }
 }

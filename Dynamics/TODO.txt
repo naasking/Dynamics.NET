@@ -9,6 +9,15 @@
    ReadOnlyCollection<object>, etc. Maybe have to switch to
    a late-binding resolver, where a list of delegates to
    run is queued and executed on completion
+ * structural equality: better handle internal fields that aren't 
+   observable, eg. List<T>._version. I think for types that implement
+   IEnumerable, we should just compare enumerated values via:
+     x.Zip(y).All(z => StructuralEquals(z.Item1, z.Item2))
+ * structural equality: better handle overriding equality for
+   generic types, eg. specify an override constructor for List<> rather
+   than one for List<T0>, one for List<T1>, List<T2>, etc. Maybe
+   override should accept a LINQ expression, and then extract
+   expression and recompile for each new type.
 
 = Future Work =
 

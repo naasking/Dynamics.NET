@@ -572,11 +572,20 @@ namespace Dynamics
                 var eq = atype.GetMethod("StructuralEquals", BindingFlags.Static | BindingFlags.Public);
                 return eq.Create<Func<T, T, HashSet<(object, object)>, bool>>();
             }
+            else if ( type.GetInterfaces().Any(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IEnumerable<>)))
+            {
+                // if the type implements IEnumerable then just compare them element-by-element
+                var ienum = type.GetInterfaces().First(x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+                var et = ienum.GetGenericArguments()[0];
+                var eq = new Func<string, string, HashSet<(object, object)>, bool>(Runtime.StructuralEquals<string, char>).Method
+                              .GetGenericMethodDefinition()
+                              .MakeGenericMethod(type, et);
+                return eq.Create<Func<T, T, HashSet<(object, object)>, bool>>();
+            }
             // build a field-by-field equality comparison, ensuring we add any reference
             // types to 'visited' to avoid infinite recursion
 
-            //FIXME: if a field is an interface type, then it has no members and we currently skip it,
-            //however if it's an IEnumerable type, then we could in principle check it element-wise.
+            //FIXME: if a field is an interface type, then it has no members and we currently skip it.
             //The ideal option would be a dynamic dispatch to a type-specific equality check, but the
             //point of this API is to be fast type-specific operations. Actually, for interfaces we
             //could just compare all public properties that have getters.

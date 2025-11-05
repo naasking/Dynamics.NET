@@ -542,6 +542,10 @@ namespace DynamicsTests
             Assert.True(Type<int>.StructuralEquals(x, 1));
             Assert.False(Type<int>.StructuralEquals(x, 2));
 
+            var today = DateTime.Today;
+            Assert.True(Type<DateTime>.StructuralEquals(today, today));
+            Assert.False(Type<DateTime>.StructuralEquals(today, today.AddDays(-2)));
+
             var array = new[] { 1, 2, 3 };
             var array2 = new[] { 1, 2, 3 };
             Assert.True(Type<int[]>.StructuralEquals(array, array2));
@@ -576,6 +580,25 @@ namespace DynamicsTests
             Assert.False(Type<FooEq>.StructuralEquals(foo1, foo2));
             foo2.Bar = foo1.Bar;
             Assert.True(Type<FooEq>.StructuralEquals(foo1, foo2));
+        }
+
+        [Fact]
+        public static void StructuralEqualityComplexList()
+        {
+            // lists of types are compared element-by-element
+            var foo1 = new FooEq { Prop = 1, Bar = new BarEq { Prop = 2, Name = "foo" } };
+            var foo2 = new FooEq { Prop = 1, Bar = new BarEq { Prop = 2, Name = "foo" } };
+            var list = new List<FooEq> { foo1, foo2 };
+            Assert.True(Type<List<FooEq>>.StructuralEquals(list, list));
+
+            var list2 = new List<FooEq> { foo1, };
+            Assert.False(Type<List<FooEq>>.StructuralEquals(list, list2));
+
+            list2.Add(foo2);
+            Assert.True(Type<List<FooEq>>.StructuralEquals(list, list2));
+
+            Assert.True(Type<IEnumerable<FooEq>>.StructuralEquals(list, list));
+            Assert.True(Type<IEnumerable<FooEq>>.StructuralEquals(list, list2));
         }
 
         [Fact]
