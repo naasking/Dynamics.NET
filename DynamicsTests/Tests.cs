@@ -302,6 +302,57 @@ namespace DynamicsTests
             tst = () => tst;
             IsCopied(tst, (x, y) => x != y && x() != y() && x() == x() && y() == y());
         }
+        // A base class with value equality, and a subclass that inherits it. The 'refs' map
+        // is keyed on object identity, so these must never share an entry no matter how equal
+        // they compare.
+        class ValueEq : IEquatable<ValueEq>
+        {
+            public string Name { get; set; }
+            public bool Equals(ValueEq other) => other != null && Name == other.Name;
+            public override bool Equals(object obj) => obj is ValueEq other && Equals(other);
+            public override int GetHashCode() => Name.GetHashCode();
+        }
+        class DerivedValueEq : ValueEq
+        {
+            public string Extra { get; set; }
+        }
+
+        [Fact]
+        static void CopyDistinctButEqualObjects()
+        {
+            // two distinct objects that compare equal must yield two distinct copies, in
+            // either order, and must not be merged into one object in the result
+            var list = new List<ValueEq>
+            {
+                new ValueEq { Name = "foo" },
+                new DerivedValueEq { Name = "foo", Extra = "bar" },
+                new ValueEq { Name = "foo" },
+            };
+            var copy = Type<List<ValueEq>>.Copy(list);
+
+            Assert.Equal(3, copy.Count);
+            Assert.False(ReferenceEquals(copy[0], copy[1]));
+            Assert.False(ReferenceEquals(copy[1], copy[2]));
+            Assert.False(ReferenceEquals(copy[0], copy[2]));
+            // the base-typed copy must not be substituted for the subtype, and vice versa
+            Assert.Equal(typeof(ValueEq), copy[0].GetType());
+            Assert.Equal(typeof(DerivedValueEq), copy[1].GetType());
+            Assert.Equal(typeof(ValueEq), copy[2].GetType());
+            Assert.Equal("bar", ((DerivedValueEq)copy[1]).Extra);
+        }
+
+        [Fact]
+        static void CopySharedObjectsStillShared()
+        {
+            // the flip side: genuine sharing of one object is still preserved
+            var shared = new ValueEq { Name = "foo" };
+            var list = new List<ValueEq> { shared, shared };
+            var copy = Type<List<ValueEq>>.Copy(list);
+
+            Assert.False(ReferenceEquals(copy[0], shared));
+            Assert.True(ReferenceEquals(copy[0], copy[1]));
+        }
+
         static void IsShared<T>(T orig)
         {
             var copy = Type<T>.Copy(orig);

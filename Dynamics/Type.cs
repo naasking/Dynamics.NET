@@ -110,14 +110,20 @@ namespace Dynamics
         /// <returns>A deep copy of the value.</returns>
         public static T Copy(T value)
         {
-            return Mutability == Mutability.Immutable ? value : Copy(value, new Dictionary<object, object>());
+            return Mutability == Mutability.Immutable
+                 ? value
+                 : Copy(value, new Dictionary<object, object>(ReferenceEquality.Instance));
         }
 
         /// <summary>
         /// The copy method that preserves sharing and circular references.
         /// </summary>
         /// <param name="value"></param>
-        /// <param name="refs"></param>
+        /// <param name="refs">
+        /// The map of already copied objects, keyed on object identity. It must be constructed
+        /// with <see cref="ReferenceEquality.Instance"/>, otherwise a type that overrides equality
+        /// will alias distinct-but-equal objects onto a single entry.
+        /// </param>
         /// <returns></returns>
         public static T Copy(T value, Dictionary<object, object> refs)
         {
